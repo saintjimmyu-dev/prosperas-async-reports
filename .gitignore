@@ -1,0 +1,95 @@
+# ─── Secretos y configuracion local ───────────────────────────────────────────
+# NUNCA commitear credenciales, tokens ni archivos .env con valores reales
+.env
+.env.local
+.env.production
+.env.staging
+*.secret
+*.key
+pass.txt
+tokens.txt
+Secret.txt
+
+# ─── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# mypy / pyright
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
+
+# ─── Node / React frontend ─────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.production
+
+# ─── Docker ────────────────────────────────────────────────────────────────────
+local/localstack_data/
+
+# ─── IDE y editores ────────────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Terraform (fase futura) ───────────────────────────────────────────────────
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfvars
+terraform/override.tf
+terraform/crash.log
+
+# ─── Logs y temporales ─────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak

@@ -1,0 +1,41 @@
+services:
+  localstack:
+    image: localstack/localstack:3.7
+    container_name: prosperas-localstack
+    environment:
+      - SERVICES=sqs,dynamodb,s3
+      - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - DEBUG=1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./init/ready.d:/etc/localstack/init/ready.d
+      - localstack_data:/var/lib/localstack
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: prosperas-backend
+    environment:
+      - APP_ENV=local
+      - APP_PORT=8000
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-cambia-esto-en-local}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL:-http://localstack:4566}
+      - DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE_NAME:-prosperas-jobs}
+      - DYNAMODB_USER_INDEX_NAME=${DYNAMODB_USER_INDEX_NAME:-user_id-index}
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL:-http://localstack:4566/000000000000/prosperas-jobs-queue}
+      - SQS_PRIORITY_QUEUE_URL=${SQS_PRIORITY_QUEUE_URL:-http://localstack:4566/000000000000/prosperas-jobs-priority-queue}
+      - SQS_DLQ_URL=${SQS_DLQ_URL:-http://localstack:4566/000000000000/prosperas-jobs-dlq}
+      - DEMO_USER_USERNAME=${DEMO_USER_USERNAME:-demo}
+      - DEMO_USER_PASSWORD=${DEMO_USER_PASSWORD:-demo123}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - localstack
+
+volumes:
+  localstack_data:
