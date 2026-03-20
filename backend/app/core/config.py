@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     sqs_queue_url: str = "http://localstack:4566/000000000000/prosperas-jobs-queue"
     sqs_priority_queue_url: str = "http://localstack:4566/000000000000/prosperas-jobs-priority-queue"
     sqs_dlq_url: str = "http://localstack:4566/000000000000/prosperas-jobs-dlq"
+    sqs_priority_report_keywords: str = "priority,urgent,critico,critica"
+
+    worker_max_attempts: int = 3
+    worker_retry_base_seconds: int = 2
+    worker_retry_max_seconds: int = 60
 
     demo_user_username: str = "demo"
     demo_user_password: str = "demo123"

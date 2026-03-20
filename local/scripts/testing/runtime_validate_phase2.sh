@@ -76,15 +76,19 @@ TOKEN="$(curl -fsS -X POST http://localhost:8000/auth/login -H 'Content-Type: ap
 echo "[runtime-f2] token_len=${#TOKEN}"
 
 CREATE_OK='{"report_type":"ventas_diarias","date_range":{"start_date":"2026-03-01","end_date":"2026-03-10"},"format":"pdf"}'
+CREATE_PRIORITY='{"report_type":"priority_ventas","date_range":{"start_date":"2026-03-01","end_date":"2026-03-10"},"format":"pdf"}'
 CREATE_FAIL='{"report_type":"fail_demo","date_range":{"start_date":"2026-03-01","end_date":"2026-03-10"},"format":"pdf"}'
 
 OK_RESP="$(curl -fsS -X POST http://localhost:8000/jobs -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "$CREATE_OK")"
+PRIORITY_RESP="$(curl -fsS -X POST http://localhost:8000/jobs -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "$CREATE_PRIORITY")"
 FAIL_RESP="$(curl -fsS -X POST http://localhost:8000/jobs -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "$CREATE_FAIL")"
 
 OK_JOB_ID="$(printf '%s' "$OK_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin)["job_id"])')"
+PRIORITY_JOB_ID="$(printf '%s' "$PRIORITY_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin)["job_id"])')"
 FAIL_JOB_ID="$(printf '%s' "$FAIL_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin)["job_id"])')"
 
 echo "[runtime-f2] job_ok=$OK_JOB_ID"
+echo "[runtime-f2] job_priority=$PRIORITY_JOB_ID"
 echo "[runtime-f2] job_fail=$FAIL_JOB_ID"
 
 wait_for_status() {
@@ -116,7 +120,21 @@ wait_for_status() {
 }
 
 wait_for_status "$OK_JOB_ID" "COMPLETED"
+wait_for_status "$PRIORITY_JOB_ID" "COMPLETED"
 wait_for_status "$FAIL_JOB_ID" "FAILED"
+
+echo "[runtime-f2] Verificando evidencia de B1 (cola de prioridad) y B4 (backoff)..."
+WORKER_LOGS="$(docker compose logs --no-color worker --tail 400 || true)"
+
+if ! printf '%s' "$WORKER_LOGS" | grep -F "job=$PRIORITY_JOB_ID" | grep -F "cola=priority" >/dev/null; then
+  echo "[runtime-f2][error] No se encontro evidencia de enrutamiento por cola de prioridad para job=$PRIORITY_JOB_ID"
+  exit 1
+fi
+
+if ! printf '%s' "$WORKER_LOGS" | grep -F "job_id=$FAIL_JOB_ID" | grep -F "backoff=" >/dev/null; then
+  echo "[runtime-f2][error] No se encontro evidencia de backoff exponencial para job=$FAIL_JOB_ID"
+  exit 1
+fi
 
 echo "[runtime-f2] Verificando RedrivePolicy configurada..."
 MAIN_URL="$(docker compose exec -T localstack awslocal sqs get-queue-url --queue-name prosperas-jobs-queue --output text --query QueueUrl)"

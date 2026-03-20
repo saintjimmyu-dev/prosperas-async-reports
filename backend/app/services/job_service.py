@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from fastapi import Depends
 
+from app.core.config import Settings, get_settings
 from app.core.exceptions import InfrastructureError, NotFoundError
 from app.models.job import Job, JobStatus
 from app.schemas.job import DateRange, JobCreateRequest, JobCreateResponse, JobDetailResponse, JobsListResponse
@@ -14,9 +15,15 @@ from app.services.sqs_service import SQSService
 class JobService:
     """Orquesta casos de uso de jobs entre persistencia y mensajeria."""
 
-    def __init__(self, dynamodb_service: DynamoDBService, sqs_service: SQSService) -> None:
+    def __init__(
+        self,
+        dynamodb_service: DynamoDBService,
+        sqs_service: SQSService,
+        settings: Settings,
+    ) -> None:
         self._dynamodb_service = dynamodb_service
         self._sqs_service = sqs_service
+        self._settings = settings
 
     def create_job(self, user_id: str, payload: JobCreateRequest) -> JobCreateResponse:
         now = datetime.now(UTC)
@@ -37,6 +44,7 @@ class JobService:
         self._dynamodb_service.put_job(job)
 
         try:
+            is_priority = self._is_priority_report_type(job.report_type)
             self._sqs_service.send_job_message(
                 {
                     "job_id": job.job_id,
@@ -45,7 +53,8 @@ class JobService:
                     "format": job.format,
                     "date_range": job.date_range,
                     "status": job.status.value,
-                }
+                },
+                priority=is_priority,
             )
         except Exception as exc:
             raise InfrastructureError(
@@ -85,10 +94,21 @@ class JobService:
             updated_at=job.updated_at.isoformat(),
         )
 
+    def _is_priority_report_type(self, report_type: str) -> bool:
+        """Decide si un job debe enrutarse a cola de prioridad segun keyword."""
+        keywords = {
+            value.strip().lower()
+            for value in self._settings.sqs_priority_report_keywords.split(",")
+            if value.strip()
+        }
+        report_type_normalized = report_type.lower()
+        return any(keyword in report_type_normalized for keyword in keywords)
+
 
 def get_job_service(
     dynamodb_service: DynamoDBService = Depends(get_dynamodb_service),
     sqs_service: SQSService = Depends(get_sqs_service),
+    settings: Settings = Depends(get_settings),
 ) -> JobService:
     """Proveedor de dependencia para reutilizar servicios en rutas."""
-    return JobService(dynamodb_service=dynamodb_service, sqs_service=sqs_service)
+    return JobService(dynamodb_service=dynamodb_service, sqs_service=sqs_service, settings=settings)

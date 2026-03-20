@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import signal
 import threading
 import time
@@ -152,23 +153,91 @@ class JobWorker:
                 queue_label,
             )
         except Exception as exc:
+            receive_count = self._extract_receive_count(message)
+            self._handle_failure(
+                queue_url=queue_url,
+                queue_label=queue_label,
+                consumer_id=consumer_id,
+                message_id=message_id,
+                job_id=job_id,
+                receipt_handle=receipt_handle,
+                receive_count=receive_count,
+                error=exc,
+            )
+
+    def _handle_failure(
+        self,
+        *,
+        queue_url: str,
+        queue_label: str,
+        consumer_id: int,
+        message_id: str,
+        job_id: str | None,
+        receipt_handle: str | None,
+        receive_count: int,
+        error: Exception,
+    ) -> None:
+        if receive_count >= self._settings.worker_max_attempts:
             if job_id:
                 try:
                     self._dynamodb.update_job_status(job_id=job_id, status=JobStatus.FAILED)
                 except Exception:
                     logger.exception("No se pudo actualizar estado FAILED para job=%s", job_id)
 
-            receive_count = message.get("Attributes", {}).get("ApproximateReceiveCount", "?")
             logger.warning(
-                "Consumidor %s fallo procesando message_id=%s job_id=%s cola=%s intento=%s error=%s",
+                "Consumidor %s agoto reintentos para message_id=%s job_id=%s cola=%s intento=%s error=%s",
                 consumer_id,
                 message_id,
                 job_id,
                 queue_label,
                 receive_count,
-                exc,
+                error,
             )
-            # No se elimina el mensaje para permitir retry y posterior envio a DLQ via RedrivePolicy.
+            # No se elimina el mensaje para que SQS aplique RedrivePolicy hacia la DLQ.
+            return
+
+        backoff_seconds = min(
+            self._settings.worker_retry_base_seconds * int(math.pow(2, max(receive_count - 1, 0))),
+            self._settings.worker_retry_max_seconds,
+        )
+
+        if job_id:
+            try:
+                self._dynamodb.update_job_status(job_id=job_id, status=JobStatus.PENDING)
+            except Exception:
+                logger.exception("No se pudo revertir estado a PENDING para job=%s", job_id)
+
+        if receipt_handle:
+            try:
+                self._sqs.change_message_visibility(
+                    queue_url=queue_url,
+                    receipt_handle=receipt_handle,
+                    timeout_seconds=backoff_seconds,
+                )
+            except Exception:
+                logger.exception(
+                    "No se pudo ajustar visibilidad para backoff en message_id=%s",
+                    message_id,
+                )
+
+        logger.warning(
+            "Consumidor %s fallo procesando message_id=%s job_id=%s cola=%s intento=%s backoff=%ss error=%s",
+            consumer_id,
+            message_id,
+            job_id,
+            queue_label,
+            receive_count,
+            backoff_seconds,
+            error,
+        )
+
+    @staticmethod
+    def _extract_receive_count(message: dict) -> int:
+        raw_value = message.get("Attributes", {}).get("ApproximateReceiveCount", "1")
+        try:
+            return max(1, int(raw_value))
+        except Exception:
+            return 1
 
 
 def main() -> None:

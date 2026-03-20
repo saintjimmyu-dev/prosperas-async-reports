@@ -81,3 +81,17 @@ class SQSService:
                 message="No se pudo eliminar el mensaje de SQS.",
                 details={"queue_url": queue_url},
             ) from exc
+
+    def change_message_visibility(self, queue_url: str, receipt_handle: str, timeout_seconds: int) -> None:
+        """Ajusta visibilidad para reintento con backoff sin perder el mensaje."""
+        try:
+            self._client.change_message_visibility(
+                QueueUrl=queue_url,
+                ReceiptHandle=receipt_handle,
+                VisibilityTimeout=timeout_seconds,
+            )
+        except Exception as exc:
+            raise InfrastructureError(
+                message="No se pudo cambiar la visibilidad del mensaje en SQS.",
+                details={"queue_url": queue_url, "timeout_seconds": timeout_seconds},
+            ) from exc
