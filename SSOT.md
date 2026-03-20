@@ -1,8 +1,8 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.0.2
-Status: Activo
-Last Updated: 2026-03-19
+Version: 1.0.4
+Status: Activo (Fase 1 validada)
+Last Updated: 2026-03-20
 Owner: GitHub Copilot + project owner
 Project Root: D:/C U R S O S/AI Projects/Prosperas
 Primary Source: Prueba_Tecnica_Prosperas_FullStack_4.docx
@@ -24,6 +24,7 @@ Reglas de gobernanza:
 - toda nueva generacion de codigo y toda edicion futura deben seguir este documento antes de implementar trabajo nuevo
 - el codigo del proyecto debe incluir comentarios explicativos detallados en espanol para logica importante, flujos, efectos secundarios, integraciones y comportamiento no obvio
 - toda documentacion generada dentro del proyecto debe escribirse en espanol
+- todo script de pruebas tecnicas o validacion runtime debe ubicarse bajo local/scripts/testing para evitar archivos sueltos en la raiz de local
 
 ## 2. Resumen Ejecutivo
 
@@ -136,6 +137,13 @@ Entregables:
 Criterios de exito:
 - la API levanta localmente con docker compose up
 - se puede crear un job y persistirlo como PENDING
+
+Estado actual (2026-03-19):
+- fase completada y validada en runtime local con docker compose
+- smoke test end to end ejecutado con local/scripts/testing/runtime_validate.sh
+- validacion verificada para GET /health, POST /auth/login, POST /jobs, GET /jobs/{job_id} y GET /jobs
+- los jobs se persisten en DynamoDB local y se publican en SQS local con estado inicial PENDING
+- la asociacion de RedrivePolicy hacia DLQ se mantiene planificada para Fase 2
 
 ### Fase 2 - Dia 2: Mensajeria, Workers y Transiciones de Estado
 
@@ -277,6 +285,8 @@ Prosperas/
   local/
     docker-compose.yml
     init/
+    scripts/
+      testing/
   infra/
     ec2/
     scripts/
@@ -300,6 +310,7 @@ Reglas de responsabilidad:
 - backend/app/core contiene configuracion, auth, handlers globales y wiring de infraestructura
 - backend/tests contiene pruebas unitarias, de integracion y de rutas de fallo
 - local contiene el stack completo de bootstrap local con LocalStack
+- local/scripts/testing contiene scripts auxiliares de smoke test y validacion tecnica
 - infra contiene solo assets de despliegue productivo
 
 ## 10. Decisiones de Diseno para README y Entrevista

@@ -4,7 +4,8 @@ set -euo pipefail
 # Ejecuta la validacion completa de Fase 1 en una sola sesion WSL.
 # Esto evita que Docker pierda estado entre llamadas separadas.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+LOCAL_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$LOCAL_DIR"
 
 systemctl start docker >/dev/null 2>&1 || true
 
@@ -42,13 +43,37 @@ fi
 
 echo "[runtime] health=$(cat /tmp/prosperas_health.json)"
 
+echo "[runtime] Esperando recursos inicializados en LocalStack (DynamoDB/SQS)..."
+resources_ready=0
+for _ in $(seq 1 60); do
+  if docker compose exec -T localstack awslocal dynamodb describe-table --table-name prosperas-jobs >/dev/null 2>&1 \
+    && docker compose exec -T localstack awslocal sqs get-queue-url --queue-name prosperas-jobs-queue >/dev/null 2>&1 \
+    && docker compose exec -T localstack awslocal sqs get-queue-url --queue-name prosperas-jobs-priority-queue >/dev/null 2>&1 \
+    && docker compose exec -T localstack awslocal sqs get-queue-url --queue-name prosperas-jobs-dlq >/dev/null 2>&1; then
+    resources_ready=1
+    break
+  fi
+  sleep 2
+done
+
+if [ "$resources_ready" -ne 1 ]; then
+  echo "[runtime][error] Recursos AWS locales no listos (tabla o colas no disponibles)"
+  docker compose logs --no-color localstack | tail -120 || true
+  exit 1
+fi
+
 LOGIN_JSON='{"username":"demo","password":"demo123"}'
 TOKEN="$(curl -fsS -X POST http://localhost:8000/auth/login -H 'Content-Type: application/json' -d "$LOGIN_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])')"
 
 echo "[runtime] token_len=${#TOKEN}"
 
 CREATE_JSON='{"report_type":"ventas_diarias","date_range":{"start_date":"2026-03-01","end_date":"2026-03-10"},"format":"pdf"}'
-CREATE_RESP="$(curl -fsS -X POST http://localhost:8000/jobs -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "$CREATE_JSON")"
+if ! CREATE_RESP="$(curl -fsS -X POST http://localhost:8000/jobs -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "$CREATE_JSON")"; then
+  echo "[runtime][error] Fallo POST /jobs"
+  docker compose logs --no-color backend | tail -120 || true
+  docker compose logs --no-color localstack | tail -120 || true
+  exit 1
+fi
 JOB_ID="$(printf '%s' "$CREATE_RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin)["job_id"])')"
 
 DETAIL_RESP="$(curl -fsS -H "Authorization: Bearer $TOKEN" "http://localhost:8000/jobs/$JOB_ID")"

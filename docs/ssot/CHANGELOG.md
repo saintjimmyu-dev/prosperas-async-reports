@@ -1,5 +1,17 @@
 # Historial del SSOT
 
+## 2026-03-20 - v1.0.4
+
+- Se establecio como regla del SSOT que todo script de pruebas tecnicas y validacion runtime debe vivir en local/scripts/testing.
+- Se actualizo la referencia de validacion de Fase 1 para usar local/scripts/testing/runtime_validate.sh como ruta oficial.
+- Se ordeno la estructura objetivo del repositorio para incluir local/scripts/testing y evitar archivos sueltos en local.
+
+## 2026-03-19 - v1.0.3
+
+- Se actualizo el SSOT para declarar Fase 1 como completada y validada en runtime local.
+- Se incorporo el estado de validacion end to end con local/runtime_validate.sh y los endpoints de smoke test.
+- Se documento explicitamente que la asociacion formal de RedrivePolicy con DLQ queda en Fase 2.
+
 ## 2026-03-19 - v1.0.0
 
 - Se creo la constitucion inicial del SSOT para la prueba tecnica de Prosperas.
