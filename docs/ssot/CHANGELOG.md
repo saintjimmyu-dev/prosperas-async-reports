@@ -1,5 +1,13 @@
 # Historial del SSOT
 
+## 2026-03-20 - v1.0.7
+
+- Se agrego branding de autor Jimmy Uruchima al frontend: eyebrow en login y dashboard, footer fijo minimalista en monospace, firma en login card y titulo del tab del navegador.
+- Se documento que la generacion de PDF en Fase 3 es simulada (result_url = s3://prosperas-reports/<id>.pdf) y se anoto que Fase 4 debe incluir S3 real, generacion de archivo y URL pre-firmada.
+- Se expandieron los entregables de Fase 4 para incluir: bucket S3, generacion real de PDF/CSV con weasyprint o reportlab, upload via boto3, result_url como URL pre-firmada con TTL de 1 hora, y endpoint GET /jobs/{id}/download.
+- Se registro el commit caf2509 como cierre oficial de Fase 3.
+- Se actualizo el estado global a "Fase 3 commiteada - preparando Fase 4".
+
 ## 2026-03-20 - v1.0.6
 
 - Se actualizo el estado global del SSOT para declarar Fase 3 como validada.
