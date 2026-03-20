@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     worker_retry_base_seconds: int = 2
     worker_retry_max_seconds: int = 60
 
+    cors_allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
     demo_user_username: str = "demo"
     demo_user_password: str = "demo123"
 

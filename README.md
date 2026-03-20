@@ -1,6 +1,6 @@
 # Prosperas - Sistema de Procesamiento Asincrono de Reportes
 
-Estado: Planificacion y base documental completa
+Estado: Fase 3 validada
 
 ## 1. Resumen Ejecutivo
 
@@ -77,6 +77,10 @@ El setup final incluira:
 - frontend React
 - script de inicializacion de recursos locales
 
+URLs locales previstas:
+- backend: http://localhost:8000
+- frontend: http://localhost:5173
+
 ## 8. Despliegue a Produccion (objetivo de implementacion)
 
 El flujo de despliegue final se ejecutara con GitHub Actions:
@@ -116,10 +120,10 @@ Estado actual real del repositorio:
 - estructura documental base creada
 - diagramas iniciales creados
 - plantillas obligatorias completadas y alineadas
+- backend de Fase 1 y Fase 2 implementado y validado
+- frontend React dockerizado implementado y validado para Fase 3
 
 Pendiente en siguientes fases:
-- implementacion del backend
-- implementacion del frontend
 - implementacion de infraestructura operativa y pipeline
 
 ## 12. Reglas Operativas

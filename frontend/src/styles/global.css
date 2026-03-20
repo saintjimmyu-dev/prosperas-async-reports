@@ -1,0 +1,598 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+:root {
+  color-scheme: light;
+  --bg: #f3efe4;
+  --panel: rgba(255, 251, 244, 0.8);
+  --panel-strong: rgba(255, 250, 241, 0.94);
+  --ink: #16211c;
+  --muted: #5d665e;
+  --line: rgba(22, 33, 28, 0.12);
+  --accent: #d66a35;
+  --accent-deep: #a84c23;
+  --teal: #1b7f78;
+  --teal-soft: rgba(27, 127, 120, 0.14);
+  --warning: #d4a019;
+  --danger: #b3422f;
+  --success: #2d7c4b;
+  --shadow: 0 24px 80px rgba(22, 33, 28, 0.12);
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top left, rgba(214, 106, 53, 0.16), transparent 28%),
+    linear-gradient(135deg, #f6f1e7 0%, #efe3d4 48%, #f7f1ea 100%);
+  color: var(--ink);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 32px;
+}
+
+.background-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(8px);
+  opacity: 0.75;
+}
+
+.background-orb--amber {
+  top: -80px;
+  right: -20px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(214, 106, 53, 0.32), transparent 68%);
+}
+
+.background-orb--teal {
+  bottom: -100px;
+  left: -20px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(27, 127, 120, 0.2), transparent 70%);
+}
+
+.panel-shell {
+  position: relative;
+  backdrop-filter: blur(18px);
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  margin: 8vh auto 0;
+  padding: 36px;
+}
+
+.login-card h1,
+.hero-card h1,
+.section-heading h2 {
+  margin: 0;
+  font-size: clamp(2.2rem, 4vw, 4.3rem);
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+}
+
+.login-card__copy,
+.hero-card__copy,
+.section-heading__aside,
+.bootstrapping-copy,
+.empty-state p,
+.composer-card__footer p,
+.job-row__link--muted,
+.jobs-card__actions p {
+  color: var(--muted);
+}
+
+.eyebrow,
+.job-row__eyebrow,
+.login-card__hint-grid dt,
+.stat-card span,
+.job-row__meta-grid dt {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stack-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.stack-form label,
+.form-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.stack-form span,
+.form-grid span {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid rgba(22, 33, 28, 0.14);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  padding: 14px 16px;
+  color: var(--ink);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(214, 106, 53, 0.5);
+  box-shadow: 0 0 0 4px rgba(214, 106, 53, 0.12);
+  transform: translateY(-1px);
+}
+
+.button {
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 18px;
+  font-weight: 700;
+  transition: transform 0.18s ease, opacity 0.18s ease, background-color 0.18s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.button--primary {
+  background: linear-gradient(135deg, var(--accent) 0%, #ef8f46 100%);
+  color: white;
+}
+
+.button--secondary {
+  background: rgba(22, 33, 28, 0.08);
+  color: var(--ink);
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(22, 33, 28, 0.14);
+}
+
+.login-card__hint-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.login-card__hint-grid div,
+.stat-card {
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(22, 33, 28, 0.08);
+}
+
+.login-card__hint-grid dd {
+  margin: 8px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.dashboard-shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.hero-card {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 28px 30px;
+  background: linear-gradient(145deg, rgba(255, 248, 239, 0.95), rgba(255, 255, 255, 0.72));
+}
+
+.hero-card__actions {
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+}
+
+.hero-card__user-pill {
+  min-width: 180px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: var(--panel-strong);
+  border: 1px solid rgba(22, 33, 28, 0.08);
+}
+
+.hero-card__user-pill span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.hero-card__user-pill strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.05rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 12px;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.92fr) minmax(480px, 1.4fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.composer-card,
+.jobs-card {
+  padding: 24px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-heading h2 {
+  font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+  margin-top: 4px;
+}
+
+.section-heading--wide {
+  align-items: center;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.composer-card__footer {
+  display: grid;
+  gap: 18px;
+}
+
+.jobs-card__actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.jobs-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.connection-banner {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(22, 33, 28, 0.1);
+}
+
+.connection-banner strong,
+.connection-banner p {
+  margin: 0;
+}
+
+.connection-banner p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.connection-banner--warning {
+  background: rgba(212, 160, 25, 0.12);
+}
+
+.job-row {
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 22px;
+  border: 1px solid rgba(22, 33, 28, 0.08);
+}
+
+.job-row__title-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.job-row h3 {
+  margin: 8px 0 0;
+  font-size: 1.2rem;
+}
+
+.job-row__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0 16px;
+}
+
+.job-row__meta-grid dd {
+  margin: 6px 0 0;
+}
+
+.job-row__link {
+  font-weight: 700;
+  color: var(--teal);
+}
+
+.job-row__artifact {
+  display: grid;
+  gap: 8px;
+}
+
+.job-row__artifact-code {
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(22, 33, 28, 0.06);
+  border: 1px solid rgba(22, 33, 28, 0.08);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-badge--pending {
+  background: rgba(212, 160, 25, 0.16);
+  color: #865e04;
+}
+
+.status-badge--processing {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.status-badge--completed {
+  background: rgba(45, 124, 75, 0.16);
+  color: var(--success);
+}
+
+.status-badge--failed {
+  background: rgba(179, 66, 47, 0.14);
+  color: var(--danger);
+}
+
+.empty-state {
+  padding: 32px 8px 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px;
+}
+
+.bootstrapping-copy {
+  margin: 0;
+  padding: 0 8px;
+}
+
+.toast-stack {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 4;
+  display: grid;
+  gap: 12px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  color: white;
+  box-shadow: 0 22px 48px rgba(22, 33, 28, 0.18);
+}
+
+.toast strong,
+.toast p {
+  margin: 0;
+}
+
+.toast p {
+  margin-top: 4px;
+  font-size: 0.92rem;
+  opacity: 0.92;
+}
+
+.toast--success {
+  background: linear-gradient(135deg, #2d7c4b, #49a269);
+}
+
+.toast--error {
+  background: linear-gradient(135deg, #9f3525, #d66a35);
+}
+
+.toast--info {
+  background: linear-gradient(135deg, #14463f, #1b7f78);
+}
+
+.toast__close {
+  align-self: start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 1080px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-card {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .hero-card__actions,
+  .jobs-card__actions {
+    justify-items: start;
+  }
+}
+
+/* ── Author footer ─────────────────────────────────── */
+
+.app-footer {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+  white-space: nowrap;
+}
+
+.app-footer__author {
+  color: var(--accent);
+  font-weight: 500;
+  opacity: 1;
+}
+
+.app-footer__sep {
+  opacity: 0.5;
+}
+
+.login-card__signature {
+  margin: 20px 0 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: center;
+}
+
+.login-card__signature strong {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── Responsive ─────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 18px;
+  }
+
+  .login-card,
+  .hero-card,
+  .composer-card,
+  .jobs-card {
+    padding: 20px;
+  }
+
+  .stats-grid,
+  .form-grid,
+  .job-row__meta-grid,
+  .login-card__hint-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .job-row__title-group,
+  .section-heading,
+  .section-heading--wide {
+    flex-direction: column;
+  }
+
+  .status-badge {
+    min-width: 0;
+  }
+}

@@ -34,12 +34,25 @@ services:
       - WORKER_MAX_ATTEMPTS=${WORKER_MAX_ATTEMPTS:-3}
       - WORKER_RETRY_BASE_SECONDS=${WORKER_RETRY_BASE_SECONDS:-2}
       - WORKER_RETRY_MAX_SECONDS=${WORKER_RETRY_MAX_SECONDS:-60}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       - DEMO_USER_USERNAME=${DEMO_USER_USERNAME:-demo}
       - DEMO_USER_PASSWORD=${DEMO_USER_PASSWORD:-demo123}
     ports:
       - "8000:8000"
     depends_on:
       - localstack
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: prosperas-frontend
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
 
   worker:
     build:

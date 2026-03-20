@@ -1,5 +1,18 @@
 # Historial del SSOT
 
+## 2026-03-20 - v1.0.6
+
+- Se actualizo el estado global del SSOT para declarar Fase 3 como validada.
+- Se documento el frontend React dockerizado con login JWT demo, formulario de jobs, badges de estado, polling y layout responsive.
+- Se agrego la ruta oficial de validacion local de Fase 3 en local/scripts/testing/phase3_runtime_validate.sh.
+
+## 2026-03-20 - v1.0.5
+
+- Se actualizo el estado global del SSOT para declarar Fase 2 como validada.
+- Se incorporo el estado actual de Fase 2 con evidencia de worker concurrente, transiciones de estado, B1 (prioridad), B4 (backoff) y DLQ.
+- Se formalizo el estandar de nombres por fase para scripts de validacion bajo local/scripts/testing con prefijo phaseN.
+- Se actualizaron las rutas oficiales de scripts hacia phase1_runtime_validate.sh y phase2_runtime_validate.sh.
+
 ## 2026-03-20 - v1.0.4
 
 - Se establecio como regla del SSOT que todo script de pruebas tecnicas y validacion runtime debe vivir en local/scripts/testing.
