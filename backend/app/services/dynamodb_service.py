@@ -1,12 +1,13 @@
 import base64
 import json
+from datetime import UTC, datetime
 
 import boto3
 from boto3.dynamodb.conditions import Key
 
 from app.core.config import Settings
 from app.core.exceptions import InfrastructureError
-from app.models.job import Job
+from app.models.job import Job, JobStatus
 
 
 class DynamoDBService:
@@ -73,6 +74,32 @@ class DynamoDBService:
         items = [Job.from_item(item) for item in response.get("Items", [])]
         next_cursor = self._encode_cursor(response.get("LastEvaluatedKey"))
         return items, next_cursor
+
+    def update_job_status(self, job_id: str, status: JobStatus, result_url: str | None = None) -> None:
+        """Actualiza estado y metadata final del job de forma atomica en DynamoDB."""
+        expression_values: dict = {
+            ":status": status.value,
+            ":updated_at": datetime.now(UTC).isoformat(),
+        }
+        update_expression = "SET #status = :status, updated_at = :updated_at"
+
+        if result_url is not None:
+            update_expression += ", result_url = :result_url"
+            expression_values[":result_url"] = result_url
+
+        try:
+            self._table.update_item(
+                Key={"job_id": job_id},
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames={"#status": "status"},
+                ExpressionAttributeValues=expression_values,
+                ConditionExpression="attribute_exists(job_id)",
+            )
+        except Exception as exc:
+            raise InfrastructureError(
+                message="No se pudo actualizar el estado del job en DynamoDB.",
+                details={"job_id": job_id, "status": status.value},
+            ) from exc
 
     @staticmethod
     def _encode_cursor(last_evaluated_key: dict | None) -> str | None:

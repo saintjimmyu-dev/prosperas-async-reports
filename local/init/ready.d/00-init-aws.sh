@@ -19,15 +19,33 @@ DLQ_ARN=$(awslocal sqs get-queue-attributes --queue-url "$DLQ_URL" --attribute-n
 echo "[init] DLQ ARN detectado: $DLQ_ARN"
 
 echo "[init] Creando o validando cola principal..."
+MAIN_ATTRS_FILE=/tmp/prosperas-main-queue-attrs.json
+cat > "$MAIN_ATTRS_FILE" <<EOF
+{
+  "VisibilityTimeout": "30",
+  "ReceiveMessageWaitTimeSeconds": "20",
+  "RedrivePolicy": "{\"deadLetterTargetArn\":\"$DLQ_ARN\",\"maxReceiveCount\":\"3\"}"
+}
+EOF
+
 awslocal sqs create-queue \
   --queue-name prosperas-jobs-queue \
-  --attributes VisibilityTimeout=30,ReceiveMessageWaitTimeSeconds=20 \
+  --attributes "file://$MAIN_ATTRS_FILE" \
   >/dev/null
 
 echo "[init] Creando o validando cola de prioridad..."
+PRIORITY_ATTRS_FILE=/tmp/prosperas-priority-queue-attrs.json
+cat > "$PRIORITY_ATTRS_FILE" <<EOF
+{
+  "VisibilityTimeout": "30",
+  "ReceiveMessageWaitTimeSeconds": "20",
+  "RedrivePolicy": "{\"deadLetterTargetArn\":\"$DLQ_ARN\",\"maxReceiveCount\":\"3\"}"
+}
+EOF
+
 awslocal sqs create-queue \
   --queue-name prosperas-jobs-priority-queue \
-  --attributes VisibilityTimeout=30,ReceiveMessageWaitTimeSeconds=20 \
+  --attributes "file://$PRIORITY_ATTRS_FILE" \
   >/dev/null
 
 echo "[init] Recursos locales listos."

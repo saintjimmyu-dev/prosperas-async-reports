@@ -45,3 +45,39 @@ class SQSService:
                 message="No se pudo publicar el mensaje en SQS.",
                 details={"queue_url": queue_url},
             ) from exc
+
+    def receive_messages(
+        self,
+        queue_url: str,
+        *,
+        max_messages: int = 1,
+        wait_time_seconds: int = 20,
+        visibility_timeout: int = 30,
+    ) -> list[dict]:
+        """Recibe mensajes desde SQS usando long polling para reducir consumo ocioso."""
+        try:
+            response = self._client.receive_message(
+                QueueUrl=queue_url,
+                MaxNumberOfMessages=max_messages,
+                WaitTimeSeconds=wait_time_seconds,
+                VisibilityTimeout=visibility_timeout,
+                AttributeNames=["All"],
+                MessageAttributeNames=["All"],
+            )
+        except Exception as exc:
+            raise InfrastructureError(
+                message="No se pudieron recibir mensajes desde SQS.",
+                details={"queue_url": queue_url},
+            ) from exc
+
+        return response.get("Messages", [])
+
+    def delete_message(self, queue_url: str, receipt_handle: str) -> None:
+        """Confirma procesamiento exitoso eliminando el mensaje de la cola."""
+        try:
+            self._client.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
+        except Exception as exc:
+            raise InfrastructureError(
+                message="No se pudo eliminar el mensaje de SQS.",
+                details={"queue_url": queue_url},
+            ) from exc
