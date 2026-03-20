@@ -16,11 +16,12 @@ fi
 echo "[init] Creando o validando cola DLQ..."
 DLQ_URL=$(awslocal sqs create-queue --queue-name prosperas-jobs-dlq --output text --query QueueUrl)
 DLQ_ARN=$(awslocal sqs get-queue-attributes --queue-url "$DLQ_URL" --attribute-names QueueArn --output text --query Attributes.QueueArn)
+echo "[init] DLQ ARN detectado: $DLQ_ARN"
 
 echo "[init] Creando o validando cola principal..."
 awslocal sqs create-queue \
   --queue-name prosperas-jobs-queue \
-  --attributes VisibilityTimeout=30,ReceiveMessageWaitTimeSeconds=20,RedrivePolicy="{\"deadLetterTargetArn\":\"$DLQ_ARN\",\"maxReceiveCount\":\"3\"}" \
+  --attributes VisibilityTimeout=30,ReceiveMessageWaitTimeSeconds=20 \
   >/dev/null
 
 echo "[init] Creando o validando cola de prioridad..."
