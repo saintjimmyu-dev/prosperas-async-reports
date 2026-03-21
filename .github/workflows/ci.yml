@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  lint-build:
+    name: ci/lint-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validar estructura minima del repo
+        run: |
+          test -f README.md
+          test -f SSOT.md
+          test -f .env.example
+
+      - name: Validar sintaxis Python del backend
+        run: |
+          python -m compileall backend/app
