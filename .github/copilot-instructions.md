@@ -6,6 +6,9 @@
 - Mantener el gasto de AWS con seguridad por debajo de USD 10.
 - Mantener la solucion alineada con el documento original de requerimientos Prueba_Tecnica_Prosperas_FullStack_4.docx.
 - Cuando SSOT.md cambie, actualizar su version, crear un snapshot en docs/ssot/versions y anexar docs/ssot/CHANGELOG.md.
+- Todo cambio a master debe entrar por Pull Request; evitar push directo a master como regla general.
+- El agente debe operar el flujo Git de extremo a extremo (rama, commit, push, PR y merge).
+- El merge de cualquier PR requiere aprobacion explicita del owner en chat antes de ejecutarse.
 - Agregar comentarios explicativos detallados en espanol en el codigo para secciones importantes y comportamiento no obvio.
 - Generar toda la documentacion del proyecto en espanol.
 - No iniciar la fase opcional de Terraform hasta que la aplicacion core este completa y estable.
