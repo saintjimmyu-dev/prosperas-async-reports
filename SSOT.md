@@ -1,7 +1,7 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.0.9
-Status: Activo (Fase 4 en implementacion: IaC Terraform + deploy CI/CD base)
+Version: 1.1.0
+Status: Activo (Fase 4 en ejecucion: infraestructura AWS aprovisionada, pendiente cargar GitHub Secrets y disparo del primer deploy)
 Last Updated: 2026-03-21
 Owner: GitHub Copilot + project owner
 Project Root: D:/C U R S O S/AI Projects/Prosperas
@@ -235,7 +235,17 @@ Estado de implementacion inicial (2026-03-21):
 - se creo infra/ec2/docker-compose.prod.yml para backend + worker con variables de entorno de produccion
 - se creo infra/ec2/deploy.sh para despliegue idempotente remoto y verificacion de health
 - backend actualizado para usar credenciales IAM role en EC2 (endpoint/keys opcionales)
-- pendiente: terraform apply en AWS real, cargar GitHub Secrets y validar URL publica
+
+Infraestructura AWS aprovisionada (2026-03-21) - terraform apply completado:
+- ECR: 635896495979.dkr.ecr.us-east-1.amazonaws.com/prosperas-backend
+- DynamoDB tabla: prosperas-jobs (PAY_PER_REQUEST, GSI user_id-index)
+- SQS cola principal: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-queue
+- SQS cola prioridad: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-priority-queue
+- SQS DLQ: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-dlq
+- EC2 instance: i-085134f9bf4e85cd1 (IP publica: 54.224.221.78, DNS: ec2-54-224-221-78.compute-1.amazonaws.com)
+- IAM role: prosperas-ec2-role con AmazonSSMManagedInstanceCore + ECR read + runtime access
+- Seguridad: sg-0aaa01b50c94f0000
+- pendiente: cargar 18 GitHub Secrets y disparo del primer deploy automatico a produccion
 
 ### Fase 5 - Dia 5: Documentacion, Pruebas y Defensa
 

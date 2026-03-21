@@ -1,5 +1,14 @@
 # Historial del SSOT
 
+## 2026-03-21 - v1.1.0
+
+- Se actualizo el estado global a "Fase 4 en ejecucion: infraestructura AWS aprovisionada, pendiente cargar GitHub Secrets".
+- Se registro la ejecucion exitosa de terraform apply con 12 recursos creados en us-east-1.
+- Se documentaron los outputs del apply: EC2 i-085134f9bf4e85cd1 (IP 54.224.221.78), ECR prosperas-backend, DynamoDB prosperas-jobs, tres colas SQS.
+- Se registro que el PAT actual no tiene scope Secrets:write; se requiere nuevo PAT o carga manual via GitHub UI.
+- Se genero JWT_SECRET_KEY seguro de 48 bytes para usar en GitHub Secrets.
+- Pendiente: cargar 18 GitHub Secrets y disparo del primer deploy automatico a produccion.
+
 ## 2026-03-21 - v1.0.9
 
 - Se actualizo el estado global a "Fase 4 en implementacion: IaC Terraform + deploy CI/CD base".

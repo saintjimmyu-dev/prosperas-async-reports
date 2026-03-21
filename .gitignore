@@ -103,6 +103,21 @@ infrastructure/terraform/*_override.tf
 infrastructure/terraform/*_override.tf.json
 infrastructure/terraform/crash.log
 infrastructure/terraform/crash.*.log
+# infra/terraform (ruta real del proyecto)
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/terraform.tfstate
+infra/terraform/terraform.tfstate.backup
+infra/terraform/terraform.tfstate.d/
+infra/terraform/terraform.tfvars
+infra/terraform/terraform.tfvars.json
+infra/terraform/tfplan
+infra/terraform/crash.log
+infra/terraform/crash.*.log
+infra/terraform/override.tf
+# Binarios de Terraform descargados manualmente
+terraform_*.zip
+terraform_*/
 
 # ─── Logs y temporales ─────────────────────────────────────────────────────────
 *.log
