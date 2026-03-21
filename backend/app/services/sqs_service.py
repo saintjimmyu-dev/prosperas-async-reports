@@ -11,13 +11,16 @@ class SQSService:
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._client = boto3.client(
-            "sqs",
-            region_name=settings.aws_region,
-            endpoint_url=settings.aws_endpoint_url,
-            aws_access_key_id=settings.aws_access_key_id,
-            aws_secret_access_key=settings.aws_secret_access_key,
-        )
+        client_kwargs: dict = {
+            "region_name": settings.aws_region,
+        }
+        if settings.aws_endpoint_url:
+            client_kwargs["endpoint_url"] = settings.aws_endpoint_url
+        if settings.aws_access_key_id and settings.aws_secret_access_key:
+            client_kwargs["aws_access_key_id"] = settings.aws_access_key_id
+            client_kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+
+        self._client = boto3.client("sqs", **client_kwargs)
 
     def send_job_message(self, payload: dict, priority: bool = False) -> None:
         """Publica un mensaje en la cola principal o de prioridad.

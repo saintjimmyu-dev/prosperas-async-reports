@@ -1,6 +1,6 @@
 # Prosperas - Sistema de Procesamiento Asincrono de Reportes
 
-Estado: Fase 3 validada
+Estado: Fase 4 en progreso (IaC + deploy CI/CD base implementados)
 
 ## 1. Resumen Ejecutivo
 
@@ -24,7 +24,9 @@ Componentes principales:
 - Amazon DynamoDB para persistencia del estado de jobs
 - Frontend React para solicitud y seguimiento de reportes
 - LocalStack para emulacion local de AWS
+- Amazon ECR para versionado de imagenes de produccion
 - EC2 para ejecucion en produccion
+- GitHub Actions para build y despliegue automatizado
 
 Diagrama de referencia:
 - [docs/diagrams/architecture/system-architecture.md](docs/diagrams/architecture/system-architecture.md)
@@ -81,17 +83,32 @@ URLs locales previstas:
 - backend: http://localhost:8000
 - frontend: http://localhost:5173
 
-## 8. Despliegue a Produccion (objetivo de implementacion)
+## 8. Despliegue a Produccion (Fase 4)
 
-El flujo de despliegue final se ejecutara con GitHub Actions:
-- push a main
-- build de imagenes API y worker
-- push a ECR
-- despliegue en EC2
+Ya se implemento una base operativa de despliegue:
+- Terraform base en [infra/terraform](infra/terraform)
+- Compose productivo en [infra/ec2/docker-compose.prod.yml](infra/ec2/docker-compose.prod.yml)
+- Workflow de deploy en [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
 
-El README final de entrega incluira:
-- badge de pipeline en verde
-- URL publica de produccion
+Flujo actual:
+- push a master (paths de backend/infra/workflow)
+- build de imagen backend/worker
+- push de tags sha + latest a ECR
+- despliegue remoto en EC2 via AWS Systems Manager (SSM)
+
+Secrets requeridos en GitHub:
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_REGION
+- ECR_REPOSITORY
+- EC2_INSTANCE_ID
+- JWT_SECRET_KEY
+- DYNAMODB_TABLE_NAME
+- DYNAMODB_USER_INDEX_NAME
+- SQS_QUEUE_URL
+- SQS_PRIORITY_QUEUE_URL
+- SQS_DLQ_URL
+- CORS_ALLOWED_ORIGINS
 
 ## 9. Costo y Guardrails
 
@@ -122,9 +139,12 @@ Estado actual real del repositorio:
 - plantillas obligatorias completadas y alineadas
 - backend de Fase 1 y Fase 2 implementado y validado
 - frontend React dockerizado implementado y validado para Fase 3
+- base de Fase 4 creada (Terraform, compose productivo y workflow de deploy)
 
 Pendiente en siguientes fases:
-- implementacion de infraestructura operativa y pipeline
+- ejecutar terraform apply en AWS real
+- cargar secrets en GitHub y validar deploy exitoso en EC2
+- publicar URL final de produccion y cerrar Fase 4
 
 ## 12. Reglas Operativas
 

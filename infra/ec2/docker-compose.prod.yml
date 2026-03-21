@@ -1,0 +1,57 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE}
+    container_name: prosperas-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_PORT: ${APP_PORT}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+      DYNAMODB_TABLE_NAME: ${DYNAMODB_TABLE_NAME}
+      DYNAMODB_USER_INDEX_NAME: ${DYNAMODB_USER_INDEX_NAME}
+      SQS_QUEUE_URL: ${SQS_QUEUE_URL}
+      SQS_PRIORITY_QUEUE_URL: ${SQS_PRIORITY_QUEUE_URL}
+      SQS_DLQ_URL: ${SQS_DLQ_URL}
+      SQS_PRIORITY_REPORT_KEYWORDS: ${SQS_PRIORITY_REPORT_KEYWORDS}
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS}
+      WORKER_RETRY_BASE_SECONDS: ${WORKER_RETRY_BASE_SECONDS}
+      WORKER_RETRY_MAX_SECONDS: ${WORKER_RETRY_MAX_SECONDS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      DEMO_USER_USERNAME: ${DEMO_USER_USERNAME}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    image: ${BACKEND_IMAGE}
+    container_name: prosperas-worker
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker.consumer"]
+    environment:
+      APP_ENV: ${APP_ENV}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+      DYNAMODB_TABLE_NAME: ${DYNAMODB_TABLE_NAME}
+      DYNAMODB_USER_INDEX_NAME: ${DYNAMODB_USER_INDEX_NAME}
+      SQS_QUEUE_URL: ${SQS_QUEUE_URL}
+      SQS_PRIORITY_QUEUE_URL: ${SQS_PRIORITY_QUEUE_URL}
+      SQS_DLQ_URL: ${SQS_DLQ_URL}
+      SQS_PRIORITY_REPORT_KEYWORDS: ${SQS_PRIORITY_REPORT_KEYWORDS}
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS}
+      WORKER_RETRY_BASE_SECONDS: ${WORKER_RETRY_BASE_SECONDS}
+      WORKER_RETRY_MAX_SECONDS: ${WORKER_RETRY_MAX_SECONDS}
+      DEMO_USER_USERNAME: ${DEMO_USER_USERNAME}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD}
+    depends_on:
+      backend:
+        condition: service_healthy

@@ -1,5 +1,14 @@
 # Historial del SSOT
 
+## 2026-03-21 - v1.0.9
+
+- Se actualizo el estado global a "Fase 4 en implementacion: IaC Terraform + deploy CI/CD base".
+- Se documento la creacion de infra/terraform con recursos base de ECR, DynamoDB, SQS, IAM y EC2.
+- Se registro el workflow .github/workflows/deploy.yml para build/push de imagen y despliegue remoto via SSM.
+- Se documento la creacion de infra/ec2/docker-compose.prod.yml y infra/ec2/deploy.sh para ejecucion productiva.
+- Se registro la actualizacion del backend para usar endpoint y credenciales AWS opcionales, habilitando IAM Role en EC2.
+- Se marco como pendiente el apply real en AWS, carga de GitHub Secrets y validacion de URL publica.
+
 ## 2026-03-21 - v1.0.8
 
 - Se actualizo el estado global para declarar la preparacion completa de Fase 4.

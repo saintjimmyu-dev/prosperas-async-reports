@@ -19,13 +19,16 @@ class DynamoDBService:
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._resource = boto3.resource(
-            "dynamodb",
-            region_name=settings.aws_region,
-            endpoint_url=settings.aws_endpoint_url,
-            aws_access_key_id=settings.aws_access_key_id,
-            aws_secret_access_key=settings.aws_secret_access_key,
-        )
+        resource_kwargs: dict = {
+            "region_name": settings.aws_region,
+        }
+        if settings.aws_endpoint_url:
+            resource_kwargs["endpoint_url"] = settings.aws_endpoint_url
+        if settings.aws_access_key_id and settings.aws_secret_access_key:
+            resource_kwargs["aws_access_key_id"] = settings.aws_access_key_id
+            resource_kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+
+        self._resource = boto3.resource("dynamodb", **resource_kwargs)
         self._table = self._resource.Table(settings.dynamodb_table_name)
 
     def put_job(self, job: Job) -> None:

@@ -1,0 +1,153 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - backend/**
+      - infra/**
+      - .github/workflows/deploy.yml
+      - .env.example
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+jobs:
+  deploy:
+    name: deploy/prod-ec2
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build y push de imagen backend/worker
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}"
+          docker build -t "${IMAGE_URI}" backend
+          docker tag "${IMAGE_URI}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          docker push "${IMAGE_URI}"
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          echo "IMAGE_URI=${IMAGE_URI}" >> "$GITHUB_ENV"
+
+      - name: Construir .env.production
+        run: |
+          set -euo pipefail
+
+          APP_ENV="${{ secrets.APP_ENV }}"
+          JWT_ALGORITHM="${{ secrets.JWT_ALGORITHM }}"
+          JWT_EXPIRE_MINUTES="${{ secrets.JWT_EXPIRE_MINUTES }}"
+          WORKER_MAX_ATTEMPTS="${{ secrets.WORKER_MAX_ATTEMPTS }}"
+          WORKER_RETRY_BASE_SECONDS="${{ secrets.WORKER_RETRY_BASE_SECONDS }}"
+          WORKER_RETRY_MAX_SECONDS="${{ secrets.WORKER_RETRY_MAX_SECONDS }}"
+          DEMO_USER_USERNAME="${{ secrets.DEMO_USER_USERNAME }}"
+          DEMO_USER_PASSWORD="${{ secrets.DEMO_USER_PASSWORD }}"
+
+          [[ -z "${APP_ENV}" ]] && APP_ENV="production"
+          [[ -z "${JWT_ALGORITHM}" ]] && JWT_ALGORITHM="HS256"
+          [[ -z "${JWT_EXPIRE_MINUTES}" ]] && JWT_EXPIRE_MINUTES="60"
+          [[ -z "${WORKER_MAX_ATTEMPTS}" ]] && WORKER_MAX_ATTEMPTS="3"
+          [[ -z "${WORKER_RETRY_BASE_SECONDS}" ]] && WORKER_RETRY_BASE_SECONDS="2"
+          [[ -z "${WORKER_RETRY_MAX_SECONDS}" ]] && WORKER_RETRY_MAX_SECONDS="60"
+          [[ -z "${DEMO_USER_USERNAME}" ]] && DEMO_USER_USERNAME="demo"
+          [[ -z "${DEMO_USER_PASSWORD}" ]] && DEMO_USER_PASSWORD="demo123"
+
+          cat > .env.production <<EOF
+          BACKEND_IMAGE=${IMAGE_URI}
+          APP_ENV=${APP_ENV}
+          APP_PORT=8000
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          JWT_ALGORITHM=${JWT_ALGORITHM}
+          JWT_EXPIRE_MINUTES=${JWT_EXPIRE_MINUTES}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_ENDPOINT_URL=
+          DYNAMODB_TABLE_NAME=${{ secrets.DYNAMODB_TABLE_NAME }}
+          DYNAMODB_USER_INDEX_NAME=${{ secrets.DYNAMODB_USER_INDEX_NAME }}
+          SQS_QUEUE_URL=${{ secrets.SQS_QUEUE_URL }}
+          SQS_PRIORITY_QUEUE_URL=${{ secrets.SQS_PRIORITY_QUEUE_URL }}
+          SQS_DLQ_URL=${{ secrets.SQS_DLQ_URL }}
+          SQS_PRIORITY_REPORT_KEYWORDS=priority,urgent,critico,critica
+          WORKER_MAX_ATTEMPTS=${WORKER_MAX_ATTEMPTS}
+          WORKER_RETRY_BASE_SECONDS=${WORKER_RETRY_BASE_SECONDS}
+          WORKER_RETRY_MAX_SECONDS=${WORKER_RETRY_MAX_SECONDS}
+          CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
+          DEMO_USER_USERNAME=${DEMO_USER_USERNAME}
+          DEMO_USER_PASSWORD=${DEMO_USER_PASSWORD}
+          EOF
+
+      - name: Deploy en EC2 via SSM
+        run: |
+          set -euo pipefail
+
+          COMPOSE_B64=$(base64 -w 0 infra/ec2/docker-compose.prod.yml)
+          DEPLOY_B64=$(base64 -w 0 infra/ec2/deploy.sh)
+          ENV_B64=$(base64 -w 0 .env.production)
+
+          cat > ssm-params.json <<EOF
+          {
+            "commands": [
+              "set -euo pipefail",
+              "mkdir -p /tmp/prosperas",
+              "echo '${COMPOSE_B64}' | base64 -d > /tmp/prosperas/docker-compose.prod.yml",
+              "echo '${DEPLOY_B64}' | base64 -d > /tmp/prosperas/deploy.sh",
+              "echo '${ENV_B64}' | base64 -d > /tmp/prosperas/.env.production",
+              "chmod +x /tmp/prosperas/deploy.sh",
+              "/tmp/prosperas/deploy.sh /tmp/prosperas /opt/prosperas"
+            ]
+          }
+          EOF
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy Prosperas backend+worker" \
+            --parameters file://ssm-params.json \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id "${COMMAND_ID}" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}"
+
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id "${COMMAND_ID}" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query "Status" \
+            --output text)
+
+          echo "Estado final de despliegue: ${STATUS}"
+
+          if [[ "${STATUS}" != "Success" ]]; then
+            aws ssm get-command-invocation \
+              --command-id "${COMMAND_ID}" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+              --query "StandardErrorContent" \
+              --output text
+            exit 1
+          fi
+
+          aws ssm get-command-invocation \
+            --command-id "${COMMAND_ID}" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query "StandardOutputContent" \
+            --output text

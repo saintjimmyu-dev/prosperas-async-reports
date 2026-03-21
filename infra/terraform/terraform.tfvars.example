@@ -1,0 +1,19 @@
+aws_region         = "us-east-1"
+project_name       = "prosperas"
+environment        = "prod"
+ec2_instance_type  = "t3.micro"
+
+# Opcional: habilita SSH si necesitas acceso directo.
+enable_ssh = false
+ssh_cidr   = "0.0.0.0/0"
+
+# Puedes restringir API a tu IP publica para mayor seguridad.
+allowed_api_cidr = "0.0.0.0/0"
+
+ecr_repository_name      = "prosperas-backend"
+dynamodb_table_name      = "prosperas-jobs"
+dynamodb_user_index_name = "user_id-index"
+
+jobs_queue_name     = "prosperas-jobs-queue"
+priority_queue_name = "prosperas-jobs-priority-queue"
+dlq_queue_name      = "prosperas-jobs-dlq"

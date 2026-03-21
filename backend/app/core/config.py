@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,9 +21,9 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
 
     aws_region: str = "us-east-1"
-    aws_access_key_id: str = "test"
-    aws_secret_access_key: str = "test"
-    aws_endpoint_url: str | None = "http://localstack:4566"
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_endpoint_url: str | None = None
 
     dynamodb_table_name: str = "prosperas-jobs"
     dynamodb_user_index_name: str = "user_id-index"
@@ -42,6 +43,13 @@ class Settings(BaseSettings):
     demo_user_password: str = "demo123"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @field_validator("aws_access_key_id", "aws_secret_access_key", "aws_endpoint_url", mode="before")
+    @classmethod
+    def _empty_string_to_none(cls, value: str | None) -> str | None:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
 
 @lru_cache
