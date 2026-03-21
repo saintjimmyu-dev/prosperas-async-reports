@@ -1,5 +1,16 @@
 # Historial del SSOT
 
+## 2026-03-21 - v1.0.8
+
+- Se actualizo el estado global para declarar la preparacion completa de Fase 4.
+- Se registro la creacion del repositorio GitHub saintjimmyu-dev/prosperas-async-reports con rama master protegida.
+- Se documento el usuario IAM github-actions-deploy con PowerUserAccess, inline policy ProsperasLimitedIamScope y credenciales en SSM Parameter Store.
+- Se registro la habilitacion de Secret Scanning y Push Protection en el repositorio.
+- Se registro el workflow CI .github/workflows/ci.yml con job ci/lint-build aprobado.
+- Se registro el script de hardening apply_github_repo_security.ps1 bajo local/scripts/security.
+- Se registro la fusion del PR #1 (commit ab2ac5f) a master y la limpieza de la rama chore/ci-min-workflow.
+- Se actualizo el estado global a "repositorio GitHub configurado con CI/CD y seguridad - iniciando Fase 4".
+
 ## 2026-03-20 - v1.0.7
 
 - Se agrego branding de autor Jimmy Uruchima al frontend: eyebrow en login y dashboard, footer fijo minimalista en monospace, firma en login card y titulo del tab del navegador.
