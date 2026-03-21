@@ -9,6 +9,7 @@ on:
       - infra/**
       - .github/workflows/deploy.yml
       - .env.example
+  workflow_dispatch:
 
 permissions:
   contents: read
