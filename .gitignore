@@ -6,9 +6,13 @@
 .env.staging
 *.secret
 *.key
+*.pem
+*.p12
+*.jks
 pass.txt
 tokens.txt
 Secret.txt
+*.tfvars.json
 
 # ─── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
@@ -88,6 +92,17 @@ terraform/*.tfstate.backup
 terraform/*.tfvars
 terraform/override.tf
 terraform/crash.log
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.*
+infrastructure/terraform/*.tfvars
+infrastructure/terraform/*.tfvars.json
+infrastructure/terraform/override.tf
+infrastructure/terraform/override.tf.json
+infrastructure/terraform/*_override.tf
+infrastructure/terraform/*_override.tf.json
+infrastructure/terraform/crash.log
+infrastructure/terraform/crash.*.log
 
 # ─── Logs y temporales ─────────────────────────────────────────────────────────
 *.log
