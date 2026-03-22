@@ -1,5 +1,14 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.0
+
+- Se actualizo la IP publica de EC2 de 54.224.221.78 a 18.212.132.182 tras terraform apply que agrego dynamodb:DescribeTable (user_data hash cambio, AWS asigno IP dinamica nueva).
+- Se agrego dynamodb:DescribeTable al IAM policy ec2_runtime_access; /health ahora verifica DynamoDB sin AccessDeniedException.
+- Se actualizo secret CORS_ALLOWED_ORIGINS via GitHub API con la nueva IP: http://18.212.132.182:5173,http://localhost:5173,http://127.0.0.1:5173.
+- Se verifico /health en produccion: status ok, dynamodb ok, sqs ok en http://18.212.132.182:8000/health.
+- Se limpiaron ramas residuales: docs/actualizar-ip-ec2 y fix/iam-describetable-health absorbidos en este commit.
+- Fase 4 cerrada formalmente. Inicio de Fase 5.
+
 ## 2026-03-21 - v1.2.0
 
 - Se actualizo el estado global a "Fase 4 completada: deploy exitoso en EC2, URL publica activa, healthcheck extendido con B5".

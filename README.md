@@ -136,7 +136,7 @@ Estado actual real del repositorio:
 - plantillas obligatorias completadas y alineadas
 - backend de Fase 1 y Fase 2 implementado y validado
 - frontend React dockerizado implementado y validado para Fase 3
-- Fase 4 completa: Terraform apply ejecutado, 18 GitHub Secrets cargados, pipeline CI/CD operativo, deploy exitoso en EC2
+- Fase 4 cerrada: Terraform apply ejecutado, 18 GitHub Secrets cargados, pipeline CI/CD operativo, deploy exitoso en EC2
 - URL publica activa: http://18.212.132.182:8000/health
 - healthcheck extendido con verificacion de DynamoDB y SQS (bonus B5)
 
