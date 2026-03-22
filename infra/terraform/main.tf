@@ -103,6 +103,7 @@ resource "aws_iam_role_policy" "ec2_runtime_access" {
       {
         Effect = "Allow"
         Action = [
+          "dynamodb:DescribeTable",
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:UpdateItem",
