@@ -1,5 +1,11 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.2
+
+- Se actualizo el estado global del SSOT para reflejar Fase 5 documental cerrada y mergeada a master.
+- Se dejo explicita la restriccion de entorno de esta sesion para ejecucion de smoke test productivo via HTTP/curl.
+- Se marco como pendiente la evidencia de smoke test productivo desde un entorno externo habilitado.
+
 ## 2026-03-22 - v1.3.1
 
 - Se agrego politica de gobernanza para flujo Git: el agente puede crear ramas y PR, pero no puede hacer merge a master/main.
