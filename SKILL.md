@@ -166,6 +166,27 @@ Estados canonicos del job:
 - `COMPLETED`
 - `FAILED`
 
+Diagrama rapido de secuencia (API -> SQS -> Worker -> DynamoDB):
+
+```mermaid
+sequenceDiagram
+	participant U as Usuario/Frontend
+	participant API as FastAPI
+	participant DB as DynamoDB
+	participant Q as Amazon SQS
+	participant W as Worker
+
+	U->>API: POST /jobs (JWT + payload)
+	API->>DB: PutItem(status=PENDING)
+	API->>Q: SendMessage(job_id, report_type, format)
+	API-->>U: 201 {job_id, status:PENDING}
+
+	W->>Q: ReceiveMessage()
+	W->>DB: UpdateItem(status=PROCESSING)
+	W->>DB: UpdateItem(status=COMPLETED|FAILED, result_url?)
+	W->>Q: DeleteMessage() si completo
+```
+
 ## 7. Servicios AWS Activos y Funcion Real
 
 Servicios activos en AWS real:
@@ -353,6 +374,17 @@ Parametros:
 - `page_size`: default 20, minimo 20, maximo 100
 - `cursor`: paginacion basada en `LastEvaluatedKey` codificada en base64
 
+### 9.2.1 Matriz Rapida de Seguridad de Endpoints
+
+| Endpoint | Metodo | Requiere Bearer Token | Tipo |
+| --- | --- | --- | --- |
+| `/` | GET | No | Publico |
+| `/health` | GET | No | Publico |
+| `/auth/login` | POST | No | Publico |
+| `/jobs` | POST | Si | Protegido |
+| `/jobs` | GET | Si | Protegido |
+| `/jobs/{job_id}` | GET | Si | Protegido |
+
 ### 9.3 Persistencia
 
 Modelo `Job`:
@@ -372,6 +404,25 @@ La consulta por usuario se hace por GSI:
 - nombre: `user_id-index`
 - patron: `query` por `user_id`
 - orden: `ScanIndexForward=False` para traer primero los mas recientes
+
+Ejemplo de item real en DynamoDB (contrato de datos persistido):
+
+```json
+{
+	"job_id": "7f2cf39a-8b16-4c1a-8a13-5a3a4d54a48a",
+	"user_id": "demo",
+	"status": "COMPLETED",
+	"report_type": "ventas_diarias",
+	"date_range": {
+		"start_date": "2026-03-01",
+		"end_date": "2026-03-10"
+	},
+	"format": "pdf",
+	"created_at": "2026-03-22T15:03:18.104Z",
+	"updated_at": "2026-03-22T15:03:21.447Z",
+	"result_url": "s3://prosperas-reports/7f2cf39a-8b16-4c1a-8a13-5a3a4d54a48a.pdf"
+}
+```
 
 ## 10. Worker: Como Funciona Exactamente
 
@@ -417,6 +468,19 @@ Cola prioritaria:
 Casos de prueba utiles:
 - `priority_ventas`: debe ir a cola prioritaria
 - `fail_demo`: debe fallar, aplicar retries y terminar en `FAILED`
+
+### 10.1 Observabilidad y Debugging Rapido
+
+Que mirar primero en logs del worker:
+- el formato incluye `threadName`, por eso puedes identificar rapido que consumidor proceso cada mensaje
+- buscar `job_id` para seguir el ciclo completo del job
+- revisar `ApproximateReceiveCount` para saber en que intento va el mensaje
+
+Patrones utiles de diagnostico:
+- si aparece error al ejecutar `change_message_visibility` y el job no respeta backoff, revisar permisos SQS del rol de ejecucion
+- si `ApproximateReceiveCount` sube y el estado vuelve a `PENDING` repetidamente, el procesamiento sigue fallando antes de completar
+- si ves `AccessDeniedException` en DynamoDB/SQS, revisar IAM antes de tocar codigo
+- si los mensajes no terminan en DLQ tras varios intentos, revisar `RedrivePolicy` de las colas
 
 ## 11. Frontend: Como Funciona Exactamente
 
@@ -571,7 +635,47 @@ Secuencia real:
 
 Importante:
 - Terraform NO forma parte del pipeline automatico
-- cambios de infraestructura se aplican manualmente con `terraform init/validate/plan/apply`
+- el pipeline (`.github/workflows/deploy.yml`) automatiza despliegue de aplicacion (build/push de imagen y rollout en EC2), no cambios de infraestructura
+- Terraform si se usa como complemento hibrido de automatizacion IaC para infraestructura AWS (EC2, IAM, SQS, DynamoDB, ECR)
+- esta separacion reduce riesgo operativo: evita mezclar en el mismo push cambios de codigo y cambios estructurales de plataforma
+- los cambios de infraestructura se ejecutan manualmente de forma controlada con `terraform init`, `terraform validate`, `terraform plan` y `terraform apply`
+- flujo recomendado: 1) aplicar Terraform si hay cambios infra, 2) validar estado (outputs/health), 3) luego desplegar aplicacion por pipeline
+
+### 13.1 Parametros Criticos del Sistema (que significan y donde se cambian)
+
+Esta seccion resume los parametros que mas impactan seguridad, conectividad y comportamiento del worker.
+
+| Parametro | Que controla | Valor actual/base | Donde se cambia en local | Donde se cambia en produccion | Impacto si esta mal |
+| --- | --- | --- | --- | --- | --- |
+| `JWT_SECRET_KEY` | Firma y validacion de JWT | `cambia-esto-en-local` en ejemplo | `local/.env` | GitHub Secret `JWT_SECRET_KEY` (inyectado en `.env.production` por `deploy.yml`) | Tokens invalidos o inseguros; login puede romperse |
+| `JWT_ALGORITHM` | Algoritmo JWT | `HS256` | `local/.env` | GitHub Secret `JWT_ALGORITHM` o default del pipeline | Si no coincide con backend, falla validacion de token |
+| `JWT_EXPIRE_MINUTES` | Tiempo de vida del token | `60` | `local/.env` | GitHub Secret `JWT_EXPIRE_MINUTES` o default del pipeline | Expiracion muy corta/larga afecta UX y seguridad |
+| `DEMO_USER_USERNAME` / `DEMO_USER_PASSWORD` | Credenciales demo de login | `demo` / `demo123` | `local/.env` | GitHub Secrets `DEMO_USER_USERNAME` y `DEMO_USER_PASSWORD` | Login falla o quedan credenciales debiles en prod |
+| `CORS_ALLOWED_ORIGINS` | Origenes permitidos para frontend | `http://localhost:5173,...` | `local/.env` o `.env.example` | GitHub Secret `CORS_ALLOWED_ORIGINS` | Bloqueos CORS o exposicion a origenes no deseados |
+| `AWS_REGION` | Region AWS para boto3 | `us-east-1` | `local/.env` | GitHub Secret `AWS_REGION` | Cliente AWS apunta a region incorrecta |
+| `AWS_ENDPOINT_URL` | Endpoint AWS (LocalStack vs AWS real) | `http://localstack:4566` local, vacio en prod | `local/.env` | Se fuerza vacio en `deploy.yml` | Si queda LocalStack en prod, backend no llega a AWS real |
+| `DYNAMODB_TABLE_NAME` | Tabla de jobs | `prosperas-jobs` | `local/.env` | GitHub Secret `DYNAMODB_TABLE_NAME` | Errores de lectura/escritura en jobs |
+| `DYNAMODB_USER_INDEX_NAME` | GSI para listar jobs por usuario | `user_id-index` | `local/.env` | GitHub Secret `DYNAMODB_USER_INDEX_NAME` | `GET /jobs` puede fallar por indice inexistente |
+| `SQS_QUEUE_URL` | Cola principal | `.../prosperas-jobs-queue` | `local/.env` | GitHub Secret `SQS_QUEUE_URL` | Jobs no se encolan o worker no consume |
+| `SQS_PRIORITY_QUEUE_URL` | Cola de prioridad | `.../prosperas-jobs-priority-queue` | `local/.env` | GitHub Secret `SQS_PRIORITY_QUEUE_URL` | Se pierde prioridad o falla consumo prioritario |
+| `SQS_DLQ_URL` | Cola de mensajes fallidos | `.../prosperas-jobs-dlq` | `local/.env` | GitHub Secret `SQS_DLQ_URL` | Fallos no quedan aislados para analisis |
+| `SQS_PRIORITY_REPORT_KEYWORDS` | Reglas para enrutar a prioridad | `priority,urgent,critico,critica` | `.env.example` y `.env.production` | En pipeline hoy queda fijo en `deploy.yml` | Jobs urgentes pueden ir a cola normal |
+| `WORKER_MAX_ATTEMPTS` | Numero de reintentos por mensaje | `3` | `.env.example` / `.env.production` locales | GitHub Secret `WORKER_MAX_ATTEMPTS` o default pipeline | Muy bajo: falla prematura; muy alto: latencia y costo |
+| `WORKER_RETRY_BASE_SECONDS` | Base del backoff exponencial | `2` | `.env.example` / `.env.production` locales | GitHub Secret `WORKER_RETRY_BASE_SECONDS` o default pipeline | Reintentos agresivos o demasiado lentos |
+| `WORKER_RETRY_MAX_SECONDS` | Tope de backoff | `60` | `.env.example` / `.env.production` locales | GitHub Secret `WORKER_RETRY_MAX_SECONDS` o default pipeline | Puede saturar cola o retrasar recuperacion |
+| `APP_ENV` / `APP_PORT` | Entorno logico y puerto API | `local` / `8000` | `local/.env` | GitHub Secret `APP_ENV` y valor fijo `APP_PORT=8000` en pipeline | Diagnostico confuso o puerto incorrecto en despliegue |
+| `BACKEND_IMAGE` | Imagen usada por backend/worker en EC2 | URI ECR con SHA o `latest` | no aplica en local compose principal | generado por `deploy.yml` y escrito en `.env.production` | Si apunta a imagen vieja, se despliega codigo desactualizado |
+
+Parametro importante no expuesto por env (ajuste por codigo):
+- `consumer_count` (concurrencia de hilos del worker): definido en `WorkerConfig` en `backend/app/worker/consumer.py` (actual: `2`).
+- Para cambiarlo hoy: editar `WorkerConfig.consumer_count` y redeplegar imagen.
+- Riesgo: si se sube demasiado sin ajustar CPU/memoria de EC2, aumentan contencion y fallos transitorios.
+
+Donde vive la definicion canonica de variables:
+- defaults y nombres: `backend/app/core/config.py`
+- plantilla general: `.env.example`
+- referencia productiva: `infra/ec2/.env.production.example`
+- composicion final de entorno productivo: `.github/workflows/deploy.yml` (paso "Construir .env.production")
 
 ## 14. Escalabilidad Real y Potencial del Proyecto
 
@@ -906,6 +1010,7 @@ No. El frontend esta implementado y validado en local. Produccion hoy cubre back
 - si una respuesta depende de estado operativo, usar los datos reales de esta version del proyecto
 - si se cambia arquitectura, contratos o estado del sistema, actualizar `README.md`, `TECHNICAL_DOCS.md` y este `SKILL.md`
 - para cambios Git, el agente puede crear rama y PR, pero el merge final lo hace manualmente el owner
+- higiene Git en workspace multi-repo: cuando se trabaje Prosperas, ejecutar Git solo contra `Prosperas/` y evitar `git add .` desde carpetas padre
 
 ## 21. Regla de Calidad para Este Archivo
 
