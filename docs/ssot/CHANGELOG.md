@@ -1,5 +1,11 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.4
+
+- Se actualizo el estado global para declarar Fase 5 cerrada y la ejecucion de Fase 6 para cierre de pendientes B2 y B6.
+- Se agrego estado explicito para Fase 6 (hardening tecnico) y Fase 7 (cierre final y defensa).
+- Se dejo documentado el orden de cierre de pendientes: B2 y B6 en Fase 6, B3 y paquete final en Fase 7.
+
 ## 2026-03-22 - v1.3.3
 
 - Se actualizo el estado global del SSOT para reflejar que Fase 5 queda verificada en documentacion y smoke test productivo.
