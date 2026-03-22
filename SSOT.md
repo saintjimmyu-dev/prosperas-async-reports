@@ -1,7 +1,7 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.1.0
-Status: Activo (Fase 4 en ejecucion: infraestructura AWS aprovisionada, pendiente cargar GitHub Secrets y disparo del primer deploy)
+Version: 1.2.0
+Status: Activo (Fase 4 completada: deploy exitoso en EC2, URL publica activa, healthcheck extendido con B5)
 Last Updated: 2026-03-21
 Owner: GitHub Copilot + project owner
 Project Root: D:/C U R S O S/AI Projects/Prosperas
@@ -245,7 +245,14 @@ Infraestructura AWS aprovisionada (2026-03-21) - terraform apply completado:
 - EC2 instance: i-085134f9bf4e85cd1 (IP publica: 54.224.221.78, DNS: ec2-54-224-221-78.compute-1.amazonaws.com)
 - IAM role: prosperas-ec2-role con AmazonSSMManagedInstanceCore + ECR read + runtime access
 - Seguridad: sg-0aaa01b50c94f0000
-- pendiente: cargar 18 GitHub Secrets y disparo del primer deploy automatico a produccion
+Deploy exitoso en produccion (2026-03-21):
+- 18 GitHub Secrets cargados via API con PyNaCl
+- pipeline deploy.yml disparado automaticamente tras merge a master
+- 3 fallos iterativos corregidos: docker no instalado, -f docker-compose.prod.yml ausente, login ECR faltante
+- deploy #4 exitoso: conclusion success, commit a0b1869
+- URL publica activa: http://54.224.221.78:8000
+- healthcheck extendido con verificacion de DynamoDB y SQS implementado (B5)
+- README actualizado para reflejar Fase 4 completa
 
 ### Fase 5 - Dia 5: Documentacion, Pruebas y Defensa
 

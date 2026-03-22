@@ -1,3 +1,5 @@
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -39,5 +41,46 @@ def root() -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    """Endpoint simple de salud para validar que la API esta viva."""
-    return {"status": "ok", "service": "backend"}
+    """Healthcheck extendido: verifica que la API esta viva y que puede alcanzar
+    DynamoDB y SQS. Satisface el bonus B5 de observabilidad.
+
+    Devuelve HTTP 200 incluso cuando una dependencia falla, pero incluye el
+    detalle en la respuesta para que sea visible sin romper reverse proxies o
+    load balancers que usen este endpoint como liveness probe.
+    """
+    checks: dict[str, str] = {}
+
+    # Verificar DynamoDB describiendo la tabla (operacion ligera, no consume RCU)
+    try:
+        boto3_kwargs: dict = {"region_name": settings.aws_region}
+        if settings.aws_endpoint_url:
+            boto3_kwargs["endpoint_url"] = settings.aws_endpoint_url
+        if settings.aws_access_key_id and settings.aws_secret_access_key:
+            boto3_kwargs["aws_access_key_id"] = settings.aws_access_key_id
+            boto3_kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+
+        dynamodb = boto3.client("dynamodb", **boto3_kwargs)
+        dynamodb.describe_table(TableName=settings.dynamodb_table_name)
+        checks["dynamodb"] = "ok"
+    except (BotoCoreError, ClientError) as exc:
+        checks["dynamodb"] = f"error: {exc}"
+
+    # Verificar SQS obteniendo atributos de la cola (operacion ligera y gratuita)
+    try:
+        sqs = boto3.client("sqs", **boto3_kwargs)
+        sqs.get_queue_attributes(
+            QueueUrl=settings.sqs_queue_url,
+            AttributeNames=["ApproximateNumberOfMessages"],
+        )
+        checks["sqs"] = "ok"
+    except (BotoCoreError, ClientError) as exc:
+        checks["sqs"] = f"error: {exc}"
+
+    overall = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
+
+    return {
+        "status": overall,
+        "service": "backend",
+        "environment": settings.app_env,
+        "dependencies": checks,
+    }

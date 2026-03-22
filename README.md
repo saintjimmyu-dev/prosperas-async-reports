@@ -1,6 +1,6 @@
 # Prosperas - Sistema de Procesamiento Asincrono de Reportes
 
-Estado: Fase 4 en progreso (IaC + deploy CI/CD base implementados)
+Estado: Fase 4 completada — backend desplegado en AWS EC2, pipeline CI/CD operativo, URL publica activa
 
 ## 1. Resumen Ejecutivo
 
@@ -85,30 +85,27 @@ URLs locales previstas:
 
 ## 8. Despliegue a Produccion (Fase 4)
 
-Ya se implemento una base operativa de despliegue:
-- Terraform base en [infra/terraform](infra/terraform)
-- Compose productivo en [infra/ec2/docker-compose.prod.yml](infra/ec2/docker-compose.prod.yml)
-- Workflow de deploy en [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+Infraestructura activa en AWS (us-east-1):
+- EC2: `i-085134f9bf4e85cd1` — IP publica `54.224.221.78`
+- ECR: `635896495979.dkr.ecr.us-east-1.amazonaws.com/prosperas-backend`
+- DynamoDB: tabla `prosperas-jobs` con GSI `user_id-index`
+- SQS: colas `prosperas-jobs-queue`, `prosperas-jobs-priority-queue`, `prosperas-jobs-dlq`
 
-Flujo actual:
-- push a master (paths de backend/infra/workflow)
-- build de imagen backend/worker
-- push de tags sha + latest a ECR
+URL publica de produccion:
+- API: `http://54.224.221.78:8000`
+- Healthcheck: `http://54.224.221.78:8000/health`
+
+Flujo de CI/CD automatico:
+- push a `master` en paths `backend/**`, `infra/**`, `.github/workflows/deploy.yml`
+- build de imagen Docker backend/worker
+- push de tags `<sha>` y `latest` a ECR
 - despliegue remoto en EC2 via AWS Systems Manager (SSM)
+- verificacion de healthcheck al final del deploy
 
-Secrets requeridos en GitHub:
-- AWS_ACCESS_KEY_ID
-- AWS_SECRET_ACCESS_KEY
-- AWS_REGION
-- ECR_REPOSITORY
-- EC2_INSTANCE_ID
-- JWT_SECRET_KEY
-- DYNAMODB_TABLE_NAME
-- DYNAMODB_USER_INDEX_NAME
-- SQS_QUEUE_URL
-- SQS_PRIORITY_QUEUE_URL
-- SQS_DLQ_URL
-- CORS_ALLOWED_ORIGINS
+Infraestructura definida en [infra/terraform](infra/terraform).
+Compose productivo en [infra/ec2/docker-compose.prod.yml](infra/ec2/docker-compose.prod.yml).
+Script de despliegue remoto en [infra/ec2/deploy.sh](infra/ec2/deploy.sh).
+Workflow CI/CD en [.github/workflows/deploy.yml](.github/workflows/deploy.yml).
 
 ## 9. Costo y Guardrails
 
@@ -139,12 +136,14 @@ Estado actual real del repositorio:
 - plantillas obligatorias completadas y alineadas
 - backend de Fase 1 y Fase 2 implementado y validado
 - frontend React dockerizado implementado y validado para Fase 3
-- base de Fase 4 creada (Terraform, compose productivo y workflow de deploy)
+- Fase 4 completa: Terraform apply ejecutado, 18 GitHub Secrets cargados, pipeline CI/CD operativo, deploy exitoso en EC2
+- URL publica activa: http://54.224.221.78:8000/health
+- healthcheck extendido con verificacion de DynamoDB y SQS (bonus B5)
 
-Pendiente en siguientes fases:
-- ejecutar terraform apply en AWS real
-- cargar secrets en GitHub y validar deploy exitoso en EC2
-- publicar URL final de produccion y cerrar Fase 4
+Pendiente en Fase 5:
+- TECHNICAL_DOCS.md final
+- pruebas backend y smoke tests
+- preparacion de defensa tecnica
 
 ## 12. Reglas Operativas
 

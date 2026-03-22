@@ -1,5 +1,15 @@
 # Historial del SSOT
 
+## 2026-03-21 - v1.2.0
+
+- Se actualizo el estado global a "Fase 4 completada: deploy exitoso en EC2, URL publica activa, healthcheck extendido con B5".
+- Se registraron los 18 GitHub Secrets cargados via API con PyNaCl.
+- Se documentaron los 3 fallos de deploy corregidos en iteracion: docker-compose-plugin inexistente en AL2023, flag -f faltante en comandos compose, login ECR faltante antes del pull.
+- Se registro el deploy exitoso: commit a0b1869, GitHub Actions run 23392624014, conclusion success.
+- Se documento la URL publica activa: http://54.224.221.78:8000 con healthcheck en /health.
+- Se registro la implementacion del healthcheck extendido con verificacion de DynamoDB y SQS (bonus B5).
+- Se actualizo el README para reflejar Fase 4 completada con URL publica e infraestructura activa.
+
 ## 2026-03-21 - v1.1.0
 
 - Se actualizo el estado global a "Fase 4 en ejecucion: infraestructura AWS aprovisionada, pendiente cargar GitHub Secrets".
