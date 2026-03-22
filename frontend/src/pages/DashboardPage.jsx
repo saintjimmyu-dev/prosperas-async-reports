@@ -1,8 +1,8 @@
-import { startTransition, useEffect, useEffectEvent, useState } from "react";
+import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { ReportComposer } from "../components/ReportComposer";
 import { JobsBoard } from "../components/JobsBoard";
-import { createJob, listJobs } from "../services/api";
+import { connectJobsRealtime, createJob, listJobs } from "../services/api";
 
 function mergeJobs(currentJobs, incomingJobs) {
   const byId = new Map(currentJobs.map((job) => [job.job_id, job]));
@@ -43,6 +43,8 @@ export function DashboardPage({ onLogout, pushToast, token, username }) {
   const [lastSyncAt, setLastSyncAt] = useState(null);
   const [connectionState, setConnectionState] = useState("connecting");
   const [lastRefreshError, setLastRefreshError] = useState("");
+  const [isRealtimeActive, setIsRealtimeActive] = useState(false);
+  const realtimeConnectedRef = useRef(false);
 
   const refreshJobs = useEffectEvent(async ({ showErrorToast = false, silent = false } = {}) => {
     if (silent) {
@@ -61,7 +63,9 @@ export function DashboardPage({ onLogout, pushToast, token, username }) {
       setConnectionState("online");
       setLastRefreshError("");
     } catch (error) {
-      setConnectionState("degraded");
+      if (!realtimeConnectedRef.current) {
+        setConnectionState("degraded");
+      }
       setLastRefreshError(error.message);
 
       if (showErrorToast) {
@@ -82,11 +86,41 @@ export function DashboardPage({ onLogout, pushToast, token, username }) {
   useEffect(() => {
     void refreshJobs({ showErrorToast: true });
 
+    const disconnectRealtime = connectJobsRealtime(token, {
+      onOpen: () => {
+        realtimeConnectedRef.current = true;
+        setIsRealtimeActive(true);
+        setConnectionState("online");
+        setLastRefreshError("");
+      },
+      onClose: () => {
+        realtimeConnectedRef.current = false;
+        setIsRealtimeActive(false);
+        setConnectionState("degraded");
+      },
+      onError: (error) => {
+        setLastRefreshError(error.message);
+      },
+      onSnapshot: (items) => {
+        startTransition(() => {
+          setJobs((currentJobs) => mergeJobs(currentJobs, items));
+          setLastSyncAt(new Date().toISOString());
+          setNextCursor(null);
+        });
+        setConnectionState("online");
+      },
+    });
+
     const intervalId = window.setInterval(() => {
-      void refreshJobs({ silent: true });
+      if (!realtimeConnectedRef.current) {
+        void refreshJobs({ silent: true });
+      }
     }, 5000);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+      disconnectRealtime();
+    };
   }, [token]);
 
   async function handleCreateJob(payload) {
@@ -187,6 +221,7 @@ export function DashboardPage({ onLogout, pushToast, token, username }) {
         <ReportComposer isCreating={isCreating} onCreateJob={handleCreateJob} />
         <JobsBoard
           connectionState={connectionState}
+          isRealtimeActive={isRealtimeActive}
           isLoadingMore={isLoadingMore}
           isRefreshing={isRefreshing}
           jobs={jobs}

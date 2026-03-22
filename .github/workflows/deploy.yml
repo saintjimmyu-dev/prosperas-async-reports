@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - backend/**
+      - frontend/**
       - infra/**
       - .github/workflows/deploy.yml
       - .env.example
@@ -51,6 +52,18 @@ jobs:
           docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
           echo "IMAGE_URI=${IMAGE_URI}" >> "$GITHUB_ENV"
 
+      - name: Build y push de imagen frontend
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          FRONTEND_IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:frontend-${GITHUB_SHA}"
+          docker build -t "${FRONTEND_IMAGE_URI}" frontend
+          docker tag "${FRONTEND_IMAGE_URI}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:frontend-latest"
+          docker push "${FRONTEND_IMAGE_URI}"
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:frontend-latest"
+          echo "FRONTEND_IMAGE_URI=${FRONTEND_IMAGE_URI}" >> "$GITHUB_ENV"
+
       - name: Construir .env.production
         run: |
           set -euo pipefail
@@ -61,6 +74,9 @@ jobs:
           WORKER_MAX_ATTEMPTS="${{ secrets.WORKER_MAX_ATTEMPTS }}"
           WORKER_RETRY_BASE_SECONDS="${{ secrets.WORKER_RETRY_BASE_SECONDS }}"
           WORKER_RETRY_MAX_SECONDS="${{ secrets.WORKER_RETRY_MAX_SECONDS }}"
+          WORKER_CIRCUIT_BREAKER_FAILURE_THRESHOLD="${{ secrets.WORKER_CIRCUIT_BREAKER_FAILURE_THRESHOLD }}"
+          WORKER_CIRCUIT_BREAKER_COOLDOWN_SECONDS="${{ secrets.WORKER_CIRCUIT_BREAKER_COOLDOWN_SECONDS }}"
+          REALTIME_STREAM_INTERVAL_SECONDS="${{ secrets.REALTIME_STREAM_INTERVAL_SECONDS }}"
           DEMO_USER_USERNAME="${{ secrets.DEMO_USER_USERNAME }}"
           DEMO_USER_PASSWORD="${{ secrets.DEMO_USER_PASSWORD }}"
 
@@ -70,11 +86,15 @@ jobs:
           [[ -z "${WORKER_MAX_ATTEMPTS}" ]] && WORKER_MAX_ATTEMPTS="3"
           [[ -z "${WORKER_RETRY_BASE_SECONDS}" ]] && WORKER_RETRY_BASE_SECONDS="2"
           [[ -z "${WORKER_RETRY_MAX_SECONDS}" ]] && WORKER_RETRY_MAX_SECONDS="60"
+          [[ -z "${WORKER_CIRCUIT_BREAKER_FAILURE_THRESHOLD}" ]] && WORKER_CIRCUIT_BREAKER_FAILURE_THRESHOLD="2"
+          [[ -z "${WORKER_CIRCUIT_BREAKER_COOLDOWN_SECONDS}" ]] && WORKER_CIRCUIT_BREAKER_COOLDOWN_SECONDS="30"
+          [[ -z "${REALTIME_STREAM_INTERVAL_SECONDS}" ]] && REALTIME_STREAM_INTERVAL_SECONDS="2"
           [[ -z "${DEMO_USER_USERNAME}" ]] && DEMO_USER_USERNAME="demo"
           [[ -z "${DEMO_USER_PASSWORD}" ]] && DEMO_USER_PASSWORD="demo123"
 
           cat > .env.production <<EOF
           BACKEND_IMAGE=${IMAGE_URI}
+          FRONTEND_IMAGE=${FRONTEND_IMAGE_URI}
           APP_ENV=${APP_ENV}
           APP_PORT=8000
           JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
@@ -91,6 +111,9 @@ jobs:
           WORKER_MAX_ATTEMPTS=${WORKER_MAX_ATTEMPTS}
           WORKER_RETRY_BASE_SECONDS=${WORKER_RETRY_BASE_SECONDS}
           WORKER_RETRY_MAX_SECONDS=${WORKER_RETRY_MAX_SECONDS}
+          WORKER_CIRCUIT_BREAKER_FAILURE_THRESHOLD=${WORKER_CIRCUIT_BREAKER_FAILURE_THRESHOLD}
+          WORKER_CIRCUIT_BREAKER_COOLDOWN_SECONDS=${WORKER_CIRCUIT_BREAKER_COOLDOWN_SECONDS}
+          REALTIME_STREAM_INTERVAL_SECONDS=${REALTIME_STREAM_INTERVAL_SECONDS}
           CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
           DEMO_USER_USERNAME=${DEMO_USER_USERNAME}
           DEMO_USER_PASSWORD=${DEMO_USER_PASSWORD}

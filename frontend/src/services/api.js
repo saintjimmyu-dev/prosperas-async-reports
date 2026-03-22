@@ -1,4 +1,5 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
+const WS_BASE_URL = (import.meta.env.VITE_WS_BASE_URL ?? "").replace(/\/$/, "");
 
 export class ApiError extends Error {
   constructor(message, { status, code, details } = {}) {
@@ -77,4 +78,53 @@ export function listJobs(token, { pageSize = 20, cursor } = {}) {
   return request(`/jobs?${params.toString()}`, {
     token,
   });
+}
+
+function buildWebSocketUrl(token) {
+  const baseUrl = WS_BASE_URL || API_BASE_URL;
+  const normalized = baseUrl.startsWith("http") ? baseUrl : window.location.origin + baseUrl;
+  const wsBase = normalized.replace(/^http/i, "ws");
+  const separator = wsBase.includes("?") ? "&" : "?";
+  return `${wsBase}/ws/jobs${separator}token=${encodeURIComponent(token)}`;
+}
+
+export function connectJobsRealtime(token, { onSnapshot, onError, onOpen, onClose }) {
+  const socketUrl = buildWebSocketUrl(token);
+  const socket = new WebSocket(socketUrl);
+
+  socket.addEventListener("open", () => {
+    onOpen?.();
+  });
+
+  socket.addEventListener("message", (event) => {
+    try {
+      const payload = JSON.parse(event.data);
+      if (payload.type === "jobs.snapshot") {
+        onSnapshot?.(payload.items ?? []);
+        return;
+      }
+
+      if (payload.type === "jobs.error") {
+        onError?.(new ApiError(payload.message ?? "Stream en tiempo real no disponible."));
+      }
+    } catch {
+      onError?.(new ApiError("Mensaje de stream no valido."));
+    }
+  });
+
+  socket.addEventListener("error", () => {
+    onError?.(new ApiError("No fue posible abrir el stream en tiempo real."));
+  });
+
+  socket.addEventListener("close", () => {
+    onClose?.();
+  });
+
+  return () => {
+    try {
+      socket.close();
+    } catch {
+      // noop
+    }
+  };
 }

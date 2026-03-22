@@ -1,5 +1,13 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.6
+
+- Se actualizo el estado global para declarar Fase 7 en ejecucion con B3 implementado y despliegue frontend preparado.
+- Se agrego endpoint WebSocket `/ws/jobs` en backend para snapshots en tiempo real por usuario autenticado.
+- Se actualizo frontend para consumir stream realtime y mantener fallback a polling cuando el socket no esta disponible.
+- Se amplio pipeline deploy para construir/publicar imagen frontend y ejecutar compose productivo con servicio de interfaz.
+- Pendiente de cierre: validacion productiva final de interfaz publica y evidencia runtime.
+
 ## 2026-03-22 - v1.3.5
 
 - Se actualizo el estado global para declarar Fase 6 cerrada con B2 y B6 verificados.

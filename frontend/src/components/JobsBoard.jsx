@@ -19,6 +19,7 @@ function isHttpResult(resultUrl) {
 
 export function JobsBoard({
   connectionState,
+  isRealtimeActive,
   isLoadingMore,
   isRefreshing,
   jobs,
@@ -36,7 +37,13 @@ export function JobsBoard({
           <h2>Estado de jobs</h2>
         </div>
         <div className="jobs-card__actions">
-          <p>{lastSyncAt ? `Ultima sincronizacion ${formatDateTime(lastSyncAt)}` : "Sin sincronizacion previa"}</p>
+          <p>
+            {isRealtimeActive
+              ? "Tiempo real activo"
+              : lastSyncAt
+                ? `Fallback polling activo · ultima sincronizacion ${formatDateTime(lastSyncAt)}`
+                : "Sin sincronizacion previa"}
+          </p>
           <button className="button button--ghost" onClick={onRefresh} type="button">
             {isRefreshing ? "Actualizando..." : "Refrescar ahora"}
           </button>

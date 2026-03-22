@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     worker_retry_max_seconds: int = 60
     worker_circuit_breaker_failure_threshold: int = 2
     worker_circuit_breaker_cooldown_seconds: int = 30
+    realtime_stream_interval_seconds: int = 2
 
     cors_allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

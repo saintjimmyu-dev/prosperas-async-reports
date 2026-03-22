@@ -1,8 +1,12 @@
 import app.main as main_module
+import app.api.routes.realtime as realtime_module
 
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from app.core.exceptions import NotFoundError
+from app.core.security import create_access_token
+from app.models.job import Job
 from app.models.job import JobStatus
 from app.schemas.job import JobCreateResponse, JobDetailResponse, JobsListResponse
 from app.services.job_service import get_job_service
@@ -128,3 +132,50 @@ def test_health_reports_dependency_statuses(monkeypatch) -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.json()["dependencies"] == {"dynamodb": "ok", "sqs": "ok"}
+
+
+def test_websocket_jobs_stream_requires_token() -> None:
+    client = TestClient(main_module.app)
+    try:
+        with client.websocket_connect("/ws/jobs"):
+            pass
+    except WebSocketDisconnect as exc:
+        assert exc.code == 4401
+    else:
+        raise AssertionError("Se esperaba cierre de websocket por token ausente.")
+
+
+def test_websocket_jobs_stream_emits_snapshot(monkeypatch) -> None:
+    class FakeDynamoDBService:
+        def __init__(self, settings) -> None:  # type: ignore[no-untyped-def]
+            self._settings = settings
+
+        def list_jobs_by_user(self, user_id: str, page_size: int, cursor: str | None):
+            assert user_id == "demo"
+            assert page_size == 20
+            return (
+                [
+                    Job(
+                        job_id="job-ws-1",
+                        user_id="demo",
+                        status=JobStatus.PROCESSING,
+                        report_type="ventas",
+                        date_range={"start_date": "2026-03-01", "end_date": "2026-03-22"},
+                        format="pdf",
+                    )
+                ],
+                None,
+            )
+
+    monkeypatch.setattr(realtime_module, "DynamoDBService", FakeDynamoDBService)
+
+    token = create_access_token(subject="demo")
+    client = TestClient(main_module.app)
+
+    with client.websocket_connect(f"/ws/jobs?token={token}") as websocket:
+        payload = websocket.receive_json()
+
+    assert payload["type"] == "jobs.snapshot"
+    assert len(payload["items"]) == 1
+    assert payload["items"][0]["job_id"] == "job-ws-1"
+    assert payload["items"][0]["status"] == "PROCESSING"

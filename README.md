@@ -1,6 +1,6 @@
 # Prosperas - Sistema de Procesamiento Asincrono de Reportes
 
-Estado: Fase 4 completada — backend desplegado en AWS EC2, pipeline CI/CD operativo, URL publica activa
+Estado: Fase 7 en ejecucion — backend productivo, B3 realtime implementado y despliegue de frontend preparado
 
 ## 1. Resumen Ejecutivo
 
@@ -83,7 +83,7 @@ URLs locales previstas:
 - backend: http://localhost:8000
 - frontend: http://localhost:5173
 
-## 8. Despliegue a Produccion (Fase 4)
+## 8. Despliegue a Produccion (Fase 4 + Fase 7)
 
 Infraestructura activa en AWS (us-east-1):
 - EC2: `i-085134f9bf4e85cd1` — IP publica `18.212.132.182`
@@ -96,11 +96,12 @@ URL publica de produccion:
 - Healthcheck: `http://18.212.132.182:8000/health`
 
 Flujo de CI/CD automatico:
-- push a `master` en paths `backend/**`, `infra/**`, `.github/workflows/deploy.yml`
+- push a `master` en paths `backend/**`, `frontend/**`, `infra/**`, `.github/workflows/deploy.yml`
 - build de imagen Docker backend/worker
-- push de tags `<sha>` y `latest` a ECR
+- build de imagen Docker frontend (nginx)
+- push de tags backend `<sha>`/`latest` y frontend `frontend-<sha>`/`frontend-latest` a ECR
 - despliegue remoto en EC2 via AWS Systems Manager (SSM)
-- verificacion de healthcheck al final del deploy
+- verificacion de backend y disponibilidad de frontend al final del deploy
 
 Infraestructura definida en [infra/terraform](infra/terraform).
 Compose productivo en [infra/ec2/docker-compose.prod.yml](infra/ec2/docker-compose.prod.yml).
@@ -140,10 +141,10 @@ Estado actual real del repositorio:
 - URL publica activa: http://18.212.132.182:8000/health
 - healthcheck extendido con verificacion de DynamoDB y SQS (bonus B5)
 
-Pendiente en Fase 5:
-- TECHNICAL_DOCS.md final
-- pruebas backend y smoke tests
-- preparacion de defensa tecnica
+Pendiente de cierre final (Fase 7):
+- validacion de interfaz en URL publica con evidencia runtime
+- ensayo final de defensa tecnica
+- paquete de entrega final
 
 ## 12. Reglas Operativas
 

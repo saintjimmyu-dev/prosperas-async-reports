@@ -40,6 +40,7 @@ MANIFEST
 
 # Entornos virtuales
 .venv/
+.venv311/
 venv/
 env/
 ENV/

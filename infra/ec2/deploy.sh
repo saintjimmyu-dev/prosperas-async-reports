@@ -72,12 +72,21 @@ cd "${TARGET_DIR}"
 echo "Esperando healthcheck de backend..."
 for _ in {1..20}; do
   if curl -fsS http://localhost:8000/health >/dev/null; then
-    echo "Deploy OK"
+    echo "Backend OK"
+    break
+  fi
+  sleep 3
+done
+
+echo "Esperando disponibilidad de frontend..."
+for _ in {1..20}; do
+  if curl -fsS http://localhost/ >/dev/null; then
+    echo "Deploy OK (backend + frontend)"
     exit 0
   fi
   sleep 3
 done
 
-echo "El backend no quedo saludable despues del deploy" >&2
+echo "El stack no quedo saludable despues del deploy" >&2
 "${COMPOSE_CMD[@]}" -f docker-compose.prod.yml --env-file .env.production ps
 exit 1
