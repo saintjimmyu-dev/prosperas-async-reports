@@ -59,8 +59,8 @@ sudo cp "${SOURCE_DIR}/.env.production" "${TARGET_DIR}/.env.production"
 sudo chown -R ec2-user:ec2-user "${TARGET_DIR}"
 
 cd "${TARGET_DIR}"
-"${COMPOSE_CMD[@]}" --env-file .env.production pull
-"${COMPOSE_CMD[@]}" --env-file .env.production up -d --remove-orphans
+"${COMPOSE_CMD[@]}" -f docker-compose.prod.yml --env-file .env.production pull
+"${COMPOSE_CMD[@]}" -f docker-compose.prod.yml --env-file .env.production up -d --remove-orphans
 
 echo "Esperando healthcheck de backend..."
 for _ in {1..20}; do
@@ -72,5 +72,5 @@ for _ in {1..20}; do
 done
 
 echo "El backend no quedo saludable despues del deploy" >&2
-"${COMPOSE_CMD[@]}" --env-file .env.production ps
+"${COMPOSE_CMD[@]}" -f docker-compose.prod.yml --env-file .env.production ps
 exit 1
