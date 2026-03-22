@@ -128,12 +128,20 @@ Implementado y validado:
 - Fase 2: worker concurrente, estados, prioridad, backoff, DLQ
 - Fase 3: frontend React dockerizado con polling y UX responsive
 - Fase 4: despliegue productivo backend + worker en EC2 con CI/CD
+- Fase 5: documentacion final y smoke test productivo verificado
 
 En curso:
-- Fase 5: documentacion final, smoke tests y consolidacion operativa
+- Fase 6: hardening tecnico y cierre de pendientes B2/B6
+
+Pendiente:
+- Fase 7: cierre final de bonus B3, defensa tecnica y paquete de entrega
+
+Estado de bonus:
+- Completados: B1 (prioridad), B4 (backoff), B5 (observabilidad)
+- Pendientes: B2 (circuit breaker), B3 (tiempo real), B6 (cobertura >= 70%)
 
 Importante:
-- frontend NO esta desplegado en produccion aun
+- frontend NO esta desplegado en produccion aun; su despliegue se ejecuta en Fase 6/7 como parte del cierre final
 - `POST /jobs` y el worker si estan operativos en produccion
 - `result_url` es simulado; no hay generacion real de PDF/CSV ni descarga real desde S3
 - observabilidad real actual = logs estructurados basicos + endpoint `/health`
