@@ -1,5 +1,10 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.1
+
+- Se agrego politica de gobernanza para flujo Git: el agente puede crear ramas y PR, pero no puede hacer merge a master/main.
+- Se establece que el merge final queda reservado al owner y debe ejecutarse manualmente.
+
 ## 2026-03-22 - v1.3.0
 
 - Se actualizo la IP publica de EC2 de 54.224.221.78 a 18.212.132.182 tras terraform apply que agrego dynamodb:DescribeTable (user_data hash cambio, AWS asigno IP dinamica nueva).
