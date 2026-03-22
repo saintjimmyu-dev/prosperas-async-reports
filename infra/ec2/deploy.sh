@@ -58,6 +58,13 @@ sudo cp "${SOURCE_DIR}/.env.production" "${TARGET_DIR}/.env.production"
 
 sudo chown -R ec2-user:ec2-user "${TARGET_DIR}"
 
+# Login en ECR con credenciales del instance profile
+AWS_REGION=$(grep '^AWS_REGION=' "${SOURCE_DIR}/.env.production" | cut -d= -f2-)
+BACKEND_IMAGE=$(grep '^BACKEND_IMAGE=' "${SOURCE_DIR}/.env.production" | cut -d= -f2-)
+ECR_REGISTRY=$(echo "${BACKEND_IMAGE}" | cut -d/ -f1)
+aws ecr get-login-password --region "${AWS_REGION}" \
+  | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+
 cd "${TARGET_DIR}"
 "${COMPOSE_CMD[@]}" -f docker-compose.prod.yml --env-file .env.production pull
 "${COMPOSE_CMD[@]}" -f docker-compose.prod.yml --env-file .env.production up -d --remove-orphans
