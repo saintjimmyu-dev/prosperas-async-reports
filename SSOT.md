@@ -242,7 +242,7 @@ Infraestructura AWS aprovisionada (2026-03-21) - terraform apply completado:
 - SQS cola principal: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-queue
 - SQS cola prioridad: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-priority-queue
 - SQS DLQ: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-dlq
-- EC2 instance: i-085134f9bf4e85cd1 (IP publica: 54.224.221.78, DNS: ec2-54-224-221-78.compute-1.amazonaws.com)
+- EC2 instance: i-085134f9bf4e85cd1 (IP publica: 18.212.132.182, DNS: ec2-18-212-132-182.compute-1.amazonaws.com)
 - IAM role: prosperas-ec2-role con AmazonSSMManagedInstanceCore + ECR read + runtime access
 - Seguridad: sg-0aaa01b50c94f0000
 Deploy exitoso en produccion (2026-03-21):
@@ -250,7 +250,7 @@ Deploy exitoso en produccion (2026-03-21):
 - pipeline deploy.yml disparado automaticamente tras merge a master
 - 3 fallos iterativos corregidos: docker no instalado, -f docker-compose.prod.yml ausente, login ECR faltante
 - deploy #4 exitoso: conclusion success, commit a0b1869
-- URL publica activa: http://54.224.221.78:8000
+- URL publica activa: http://18.212.132.182:8000
 - healthcheck extendido con verificacion de DynamoDB y SQS implementado (B5)
 - README actualizado para reflejar Fase 4 completa
 

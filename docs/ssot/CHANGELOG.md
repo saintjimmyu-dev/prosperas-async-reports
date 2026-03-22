@@ -6,7 +6,8 @@
 - Se registraron los 18 GitHub Secrets cargados via API con PyNaCl.
 - Se documentaron los 3 fallos de deploy corregidos en iteracion: docker-compose-plugin inexistente en AL2023, flag -f faltante en comandos compose, login ECR faltante antes del pull.
 - Se registro el deploy exitoso: commit a0b1869, GitHub Actions run 23392624014, conclusion success.
-- Se documento la URL publica activa: http://54.224.221.78:8000 con healthcheck en /health.
+- Se documento la URL publica activa: http://18.212.132.182:8000 con healthcheck en /health.
+- Nota: IP publica actualizada de 54.224.221.78 a 18.212.132.182 tras terraform apply que modifico user_data de EC2 (2026-03-22).
 - Se registro la implementacion del healthcheck extendido con verificacion de DynamoDB y SQS (bonus B5).
 - Se actualizo el README para reflejar Fase 4 completada con URL publica e infraestructura activa.
 

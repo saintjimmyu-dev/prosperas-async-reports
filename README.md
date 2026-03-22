@@ -86,14 +86,14 @@ URLs locales previstas:
 ## 8. Despliegue a Produccion (Fase 4)
 
 Infraestructura activa en AWS (us-east-1):
-- EC2: `i-085134f9bf4e85cd1` — IP publica `54.224.221.78`
+- EC2: `i-085134f9bf4e85cd1` — IP publica `18.212.132.182`
 - ECR: `635896495979.dkr.ecr.us-east-1.amazonaws.com/prosperas-backend`
 - DynamoDB: tabla `prosperas-jobs` con GSI `user_id-index`
 - SQS: colas `prosperas-jobs-queue`, `prosperas-jobs-priority-queue`, `prosperas-jobs-dlq`
 
 URL publica de produccion:
-- API: `http://54.224.221.78:8000`
-- Healthcheck: `http://54.224.221.78:8000/health`
+- API: `http://18.212.132.182:8000`
+- Healthcheck: `http://18.212.132.182:8000/health`
 
 Flujo de CI/CD automatico:
 - push a `master` en paths `backend/**`, `infra/**`, `.github/workflows/deploy.yml`
@@ -137,7 +137,7 @@ Estado actual real del repositorio:
 - backend de Fase 1 y Fase 2 implementado y validado
 - frontend React dockerizado implementado y validado para Fase 3
 - Fase 4 completa: Terraform apply ejecutado, 18 GitHub Secrets cargados, pipeline CI/CD operativo, deploy exitoso en EC2
-- URL publica activa: http://54.224.221.78:8000/health
+- URL publica activa: http://18.212.132.182:8000/health
 - healthcheck extendido con verificacion de DynamoDB y SQS (bonus B5)
 
 Pendiente en Fase 5:
