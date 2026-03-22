@@ -192,7 +192,12 @@ resource "aws_instance" "app" {
     set -euxo pipefail
 
     dnf update -y
-    dnf install -y docker docker-compose-plugin awscli
+    dnf install -y docker awscli
+
+    mkdir -p /usr/local/lib/docker/cli-plugins
+    curl -fSL https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-x86_64 \
+      -o /usr/local/lib/docker/cli-plugins/docker-compose
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
     systemctl enable docker
     systemctl start docker
