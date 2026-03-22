@@ -1,8 +1,11 @@
 # Pruebas Backend
 
-En Fase 1 se deja lista la estructura de pruebas.
+Fase 6 introduce la suite base de backend para sostener B6.
 
-En Fase 2 y Fase 3 se agregaran:
-- pruebas unitarias de servicios
-- pruebas de integracion de endpoints
-- pruebas de escenarios de fallo
+Cobertura objetivo:
+- pruebas unitarias de worker, servicios y seguridad
+- pruebas de integracion de endpoints con TestClient
+- pruebas de escenarios de fallo y circuit breaker
+
+Ejecucion sugerida:
+- `python -m pytest --cov=app --cov-report=term-missing tests`

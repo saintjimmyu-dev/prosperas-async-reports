@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from app.core.config import get_settings
 from app.models.job import JobStatus
+from app.services.circuit_breaker import ReportTypeCircuitBreaker
 from app.services.dynamodb_service import DynamoDBService
 from app.services.sqs_service import SQSService
 
@@ -30,11 +31,21 @@ class WorkerConfig:
 class JobWorker:
     """Worker concurrente para procesar mensajes SQS y actualizar estados en DynamoDB."""
 
-    def __init__(self, config: WorkerConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: WorkerConfig | None = None,
+        dynamodb_service: DynamoDBService | None = None,
+        sqs_service: SQSService | None = None,
+        breaker: ReportTypeCircuitBreaker | None = None,
+    ) -> None:
         self._settings = get_settings()
         self._config = config or WorkerConfig()
-        self._dynamodb = DynamoDBService(settings=self._settings)
-        self._sqs = SQSService(settings=self._settings)
+        self._dynamodb = dynamodb_service or DynamoDBService(settings=self._settings)
+        self._sqs = sqs_service or SQSService(settings=self._settings)
+        self._breaker = breaker or ReportTypeCircuitBreaker(
+            failure_threshold=self._settings.worker_circuit_breaker_failure_threshold,
+            cooldown_seconds=self._settings.worker_circuit_breaker_cooldown_seconds,
+        )
         self._stop_event = threading.Event()
         self._threads: list[threading.Thread] = []
 
@@ -121,12 +132,27 @@ class JobWorker:
         message_id = message.get("MessageId", "unknown")
         receipt_handle = message.get("ReceiptHandle")
         job_id: str | None = None
+        report_type = "unknown"
 
         try:
             payload = json.loads(message.get("Body", "{}"))
             job_id = payload["job_id"]
             report_type = str(payload.get("report_type", ""))
             output_format = str(payload.get("format", "pdf"))
+
+            allowed, retry_after_seconds = self._breaker.allow_processing(report_type)
+            if not allowed:
+                self._handle_open_circuit(
+                    queue_url=queue_url,
+                    queue_label=queue_label,
+                    consumer_id=consumer_id,
+                    message_id=message_id,
+                    job_id=job_id,
+                    report_type=report_type,
+                    receipt_handle=receipt_handle,
+                    retry_after_seconds=retry_after_seconds,
+                )
+                return
 
             self._dynamodb.update_job_status(job_id=job_id, status=JobStatus.PROCESSING)
 
@@ -142,6 +168,7 @@ class JobWorker:
                 status=JobStatus.COMPLETED,
                 result_url=result_url,
             )
+            self._breaker.record_success(report_type)
 
             if receipt_handle:
                 self._sqs.delete_message(queue_url=queue_url, receipt_handle=receipt_handle)
@@ -160,10 +187,46 @@ class JobWorker:
                 consumer_id=consumer_id,
                 message_id=message_id,
                 job_id=job_id,
+                report_type=report_type,
                 receipt_handle=receipt_handle,
                 receive_count=receive_count,
                 error=exc,
             )
+
+    def _handle_open_circuit(
+        self,
+        *,
+        queue_url: str,
+        queue_label: str,
+        consumer_id: int,
+        message_id: str,
+        job_id: str | None,
+        report_type: str,
+        receipt_handle: str | None,
+        retry_after_seconds: int,
+    ) -> None:
+        if receipt_handle:
+            try:
+                self._sqs.change_message_visibility(
+                    queue_url=queue_url,
+                    receipt_handle=receipt_handle,
+                    timeout_seconds=max(1, retry_after_seconds),
+                )
+            except Exception:
+                logger.exception(
+                    "No se pudo aplicar enfriamiento del circuit breaker para message_id=%s",
+                    message_id,
+                )
+
+        logger.warning(
+            "Consumidor %s difirio job_id=%s report_type=%s cola=%s por circuit breaker OPEN; retry_after=%ss message_id=%s",
+            consumer_id,
+            job_id,
+            report_type,
+            queue_label,
+            max(1, retry_after_seconds),
+            message_id,
+        )
 
     def _handle_failure(
         self,
@@ -173,10 +236,13 @@ class JobWorker:
         consumer_id: int,
         message_id: str,
         job_id: str | None,
+        report_type: str,
         receipt_handle: str | None,
         receive_count: int,
         error: Exception,
     ) -> None:
+        self._breaker.record_failure(report_type, error=error)
+
         if receive_count >= self._settings.worker_max_attempts:
             if job_id:
                 try:

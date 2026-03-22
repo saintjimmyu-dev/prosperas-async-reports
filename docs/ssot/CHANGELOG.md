@@ -1,5 +1,12 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.5
+
+- Se actualizo el estado global para declarar Fase 6 cerrada con B2 y B6 verificados.
+- Se registro la implementacion del circuit breaker por tipo de reporte dentro del worker.
+- Se documento la validacion de B6 con 17 pruebas backend aprobadas y 75 por ciento de cobertura sobre `backend/app`.
+- Se dejo Fase 7 como siguiente objetivo para B3, despliegue frontend productivo y cierre final de entrega.
+
 ## 2026-03-22 - v1.3.4
 
 - Se actualizo el estado global para declarar Fase 5 cerrada y la ejecucion de Fase 6 para cierre de pendientes B2 y B6.

@@ -1,7 +1,7 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.3.4
-Status: Activo (Fase 5 cerrada, Fase 6 en ejecucion para pendientes B2/B6, Fase 7 planificada para B3 y cierre final)
+Version: 1.3.5
+Status: Activo (Fase 6 cerrada con B2 y B6 verificados; Fase 7 pendiente para B3, despliegue frontend productivo y cierre final)
 Last Updated: 2026-03-22
 Owner: GitHub Copilot + project owner
 Project Root: D:/C U R S O S/AI Projects/Prosperas
@@ -286,8 +286,9 @@ Criterios de exito:
 ### Fase 6 - Buffer A
 
 Estado actual de Fase 6:
-- iniciada para hardening y cierre de pendientes tecnicos de bonus
-- foco operativo: B2 circuit breaker y B6 cobertura backend
+- cerrada con hardening tecnico aplicado al backend
+- B2 verificado con circuit breaker por report_type en el worker
+- B6 verificado con 17 pruebas backend aprobadas y 75 por ciento de cobertura sobre `backend/app`
 
 Usar para:
 - arreglos de despliegue
@@ -298,8 +299,8 @@ Usar para:
 ### Fase 7 - Buffer B
 
 Estado actual de Fase 7:
-- planificada para cierre final de bonus y paquete de entrega
-- foco de cierre: B3 tiempo real en frontend y evidencia final de defensa
+- pendiente de ejecucion para cierre final de bonus y paquete de entrega
+- foco de cierre: B3 tiempo real, despliegue de interfaz en produccion y evidencia final de defensa
 
 Usar para:
 - ensayo de entrevista
