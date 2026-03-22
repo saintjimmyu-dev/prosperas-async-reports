@@ -1,15 +1,15 @@
 # SKILL - Manual Operativo Completo del Proyecto Prosperas
 
-Estado: Activo para Fase 5, entrevista tecnica y trabajo de agentes con contexto unico.
+Estado: Activo para Fase 5 y trabajo de agentes con contexto unico.
 
 ## 1. Proposito de Este Archivo
 
-Este archivo esta disenado para que un agente de IA, un evaluador tecnico o un desarrollador nuevo pueda entender el proyecto Prosperas sin abrir el resto del repositorio.
+Este archivo esta disenado para que un agente de IA o un desarrollador nuevo pueda entender el proyecto Prosperas sin abrir el resto del repositorio.
 
 Objetivo principal:
 - describir el sistema real, no un plan abstracto
 - permitir responder preguntas tecnicas usando solo este archivo
-- servir como contexto autosuficiente para trabajo operativo, defensa tecnica y mantenimiento
+- servir como contexto autosuficiente para trabajo operativo y mantenimiento
 
 Este archivo debe responder con precision, usando el estado real del proyecto al 2026-03-22.
 
@@ -58,7 +58,7 @@ Desventajas para este reto:
 - mas piezas de infraestructura para explicar en pocos dias
 - mas friccion para depurar localmente sin desviarse del tiempo del reto
 - mayor riesgo de complejidad operativa y costo si se expande con servicios adicionales
-- cold starts y mas complejidad para defensa tecnica rapida
+- cold starts y mas complejidad operativa para el plazo del reto
 
 ### Opcion B - Arquitectura Event-Driven Contenerizada sobre EC2
 
@@ -72,7 +72,7 @@ Arquitectura elegida:
 - GitHub Actions + ECR + SSM + EC2 para CI/CD y despliegue
 
 Ventajas:
-- mas simple de construir y defender en 5 dias
+- mas simple de construir en 5 dias
 - mas facil de depurar que Lambda o ECS/Fargate
 - compatible con un entorno local muy parecido a produccion usando Docker Compose + LocalStack
 - menor riesgo de costo para el objetivo de USD 0-10
@@ -82,7 +82,6 @@ Ventajas:
 
 Se eligio la arquitectura sobre EC2 porque:
 - minimiza el riesgo de entrega en el tiempo disponible
-- es mas facil de explicar en entrevista tecnica
 - facilita un flujo local estable con LocalStack
 - evita la deriva de costo y complejidad de Fargate o topologias con mas componentes administrados
 - permite operar API y worker con el mismo codigo Python y la misma imagen Docker del backend
@@ -92,7 +91,7 @@ Se eligio la arquitectura sobre EC2 porque:
 | Tecnologia | Uso real en el proyecto | Por que se eligio |
 | --- | --- | --- |
 | Python 3 | lenguaje principal de backend y worker | rapidez de implementacion, ecosistema fuerte para APIs y AWS |
-| FastAPI | API HTTP | tipado con Pydantic, rapidez, claridad para defensa tecnica |
+| FastAPI | API HTTP | tipado con Pydantic, rapidez y contratos claros |
 | Pydantic v2 | validacion de request/response | contratos claros y validacion declarativa |
 | python-jose | JWT | implementacion simple de autenticacion demo |
 | boto3 | acceso a DynamoDB y SQS | SDK oficial AWS |
@@ -109,6 +108,19 @@ Se eligio la arquitectura sobre EC2 porque:
 | Terraform | infraestructura AWS | IaC reproducible para EC2, ECR, SQS, DynamoDB, IAM |
 | GitHub Actions | CI/CD | pipeline simple, auditable y suficiente para el reto |
 
+### 4.1 Tecnologias Alternativas No Elegidas y Motivo
+
+| Componente | Tecnologia implementada | Otras opciones viables | Por que no se eligieron en este proyecto |
+| --- | --- | --- | --- |
+| Backend API | FastAPI (Python) | Django REST Framework, Flask, NestJS (Node) | FastAPI permitio mayor velocidad de implementacion con tipado fuerte y menos boilerplate para el tiempo del reto |
+| Worker de procesamiento | Worker Python en el mismo repositorio | Celery con Redis/RabbitMQ, workers Node.js | Se priorizo simplicidad operativa y reutilizacion del mismo modelo de dominio y servicios de backend |
+| Mensajeria | Amazon SQS (main + priority + DLQ) | RabbitMQ autogestionado, Apache Kafka, Redis Streams | SQS reduce carga operativa, integra DLQ nativa y encaja mejor con costo/tiempo del proyecto |
+| Persistencia de estado | DynamoDB | PostgreSQL/RDS, MongoDB Atlas | DynamoDB resolvio bien el patron clave-valor + consulta por usuario sin administrar motor relacional |
+| Runtime productivo | EC2 + Docker Compose | ECS Fargate, EKS/Kubernetes | EC2 fue mas rapido de poner en marcha y depurar; Fargate/EKS agregan complejidad para el alcance actual |
+| Frontend build/runtime local | React + Vite | Next.js, Vue, Angular | Vite ofrecio menor friccion de build y ciclo de desarrollo mas directo para una SPA de dashboard |
+| CI/CD | GitHub Actions + ECR + SSM | GitLab CI, Jenkins, AWS CodePipeline/CodeBuild | GitHub Actions ya estaba alineado con el repositorio y permitio automatizar deploy sin infraestructura adicional |
+| IaC | Terraform | CloudFormation, AWS CDK | Terraform dio expresividad y velocidad para aprovisionar recursos AWS de forma declarativa y reproducible |
+
 ## 5. Estado Real del Proyecto
 
 Implementado y validado:
@@ -118,7 +130,7 @@ Implementado y validado:
 - Fase 4: despliegue productivo backend + worker en EC2 con CI/CD
 
 En curso:
-- Fase 5: documentacion final, smoke tests, defensa tecnica
+- Fase 5: documentacion final, smoke tests y consolidacion operativa
 
 Importante:
 - frontend NO esta desplegado en produccion aun
@@ -153,6 +165,27 @@ Estados canonicos del job:
 - `PROCESSING`
 - `COMPLETED`
 - `FAILED`
+
+Diagrama rapido de secuencia (API -> SQS -> Worker -> DynamoDB):
+
+```mermaid
+sequenceDiagram
+	participant U as Usuario/Frontend
+	participant API as FastAPI
+	participant DB as DynamoDB
+	participant Q as Amazon SQS
+	participant W as Worker
+
+	U->>API: POST /jobs (JWT + payload)
+	API->>DB: PutItem(status=PENDING)
+	API->>Q: SendMessage(job_id, report_type, format)
+	API-->>U: 201 {job_id, status:PENDING}
+
+	W->>Q: ReceiveMessage()
+	W->>DB: UpdateItem(status=PROCESSING)
+	W->>DB: UpdateItem(status=COMPLETED|FAILED, result_url?)
+	W->>Q: DeleteMessage() si completo
+```
 
 ## 7. Servicios AWS Activos y Funcion Real
 
@@ -341,6 +374,17 @@ Parametros:
 - `page_size`: default 20, minimo 20, maximo 100
 - `cursor`: paginacion basada en `LastEvaluatedKey` codificada en base64
 
+### 9.2.1 Matriz Rapida de Seguridad de Endpoints
+
+| Endpoint | Metodo | Requiere Bearer Token | Tipo |
+| --- | --- | --- | --- |
+| `/` | GET | No | Publico |
+| `/health` | GET | No | Publico |
+| `/auth/login` | POST | No | Publico |
+| `/jobs` | POST | Si | Protegido |
+| `/jobs` | GET | Si | Protegido |
+| `/jobs/{job_id}` | GET | Si | Protegido |
+
 ### 9.3 Persistencia
 
 Modelo `Job`:
@@ -360,6 +404,25 @@ La consulta por usuario se hace por GSI:
 - nombre: `user_id-index`
 - patron: `query` por `user_id`
 - orden: `ScanIndexForward=False` para traer primero los mas recientes
+
+Ejemplo de item real en DynamoDB (contrato de datos persistido):
+
+```json
+{
+	"job_id": "7f2cf39a-8b16-4c1a-8a13-5a3a4d54a48a",
+	"user_id": "demo",
+	"status": "COMPLETED",
+	"report_type": "ventas_diarias",
+	"date_range": {
+		"start_date": "2026-03-01",
+		"end_date": "2026-03-10"
+	},
+	"format": "pdf",
+	"created_at": "2026-03-22T15:03:18.104Z",
+	"updated_at": "2026-03-22T15:03:21.447Z",
+	"result_url": "s3://prosperas-reports/7f2cf39a-8b16-4c1a-8a13-5a3a4d54a48a.pdf"
+}
+```
 
 ## 10. Worker: Como Funciona Exactamente
 
@@ -405,6 +468,19 @@ Cola prioritaria:
 Casos de prueba utiles:
 - `priority_ventas`: debe ir a cola prioritaria
 - `fail_demo`: debe fallar, aplicar retries y terminar en `FAILED`
+
+### 10.1 Observabilidad y Debugging Rapido
+
+Que mirar primero en logs del worker:
+- el formato incluye `threadName`, por eso puedes identificar rapido que consumidor proceso cada mensaje
+- buscar `job_id` para seguir el ciclo completo del job
+- revisar `ApproximateReceiveCount` para saber en que intento va el mensaje
+
+Patrones utiles de diagnostico:
+- si aparece error al ejecutar `change_message_visibility` y el job no respeta backoff, revisar permisos SQS del rol de ejecucion
+- si `ApproximateReceiveCount` sube y el estado vuelve a `PENDING` repetidamente, el procesamiento sigue fallando antes de completar
+- si ves `AccessDeniedException` en DynamoDB/SQS, revisar IAM antes de tocar codigo
+- si los mensajes no terminan en DLQ tras varios intentos, revisar `RedrivePolicy` de las colas
 
 ## 11. Frontend: Como Funciona Exactamente
 
@@ -559,73 +635,240 @@ Secuencia real:
 
 Importante:
 - Terraform NO forma parte del pipeline automatico
-- cambios de infraestructura se aplican manualmente con `terraform init/validate/plan/apply`
+- el pipeline (`.github/workflows/deploy.yml`) automatiza despliegue de aplicacion (build/push de imagen y rollout en EC2), no cambios de infraestructura
+- Terraform si se usa como complemento hibrido de automatizacion IaC para infraestructura AWS (EC2, IAM, SQS, DynamoDB, ECR)
+- esta separacion reduce riesgo operativo: evita mezclar en el mismo push cambios de codigo y cambios estructurales de plataforma
+- los cambios de infraestructura se ejecutan manualmente de forma controlada con `terraform init`, `terraform validate`, `terraform plan` y `terraform apply`
+- flujo recomendado: 1) aplicar Terraform si hay cambios infra, 2) validar estado (outputs/health), 3) luego desplegar aplicacion por pipeline
 
-## 14. Problemas Reales Superados y Como se Resolvieran
+### 13.1 Parametros Criticos del Sistema (que significan y donde se cambian)
 
-### Problema 1 - Docker no estaba instalado en EC2
+Esta seccion resume los parametros que mas impactan seguridad, conectividad y comportamiento del worker.
 
-Sintoma:
-- el despliegue remoto fallaba antes de levantar contenedores
+| Parametro | Que controla | Valor actual/base | Donde se cambia en local | Donde se cambia en produccion | Impacto si esta mal |
+| --- | --- | --- | --- | --- | --- |
+| `JWT_SECRET_KEY` | Firma y validacion de JWT | `cambia-esto-en-local` en ejemplo | `local/.env` | GitHub Secret `JWT_SECRET_KEY` (inyectado en `.env.production` por `deploy.yml`) | Tokens invalidos o inseguros; login puede romperse |
+| `JWT_ALGORITHM` | Algoritmo JWT | `HS256` | `local/.env` | GitHub Secret `JWT_ALGORITHM` o default del pipeline | Si no coincide con backend, falla validacion de token |
+| `JWT_EXPIRE_MINUTES` | Tiempo de vida del token | `60` | `local/.env` | GitHub Secret `JWT_EXPIRE_MINUTES` o default del pipeline | Expiracion muy corta/larga afecta UX y seguridad |
+| `DEMO_USER_USERNAME` / `DEMO_USER_PASSWORD` | Credenciales demo de login | `demo` / `demo123` | `local/.env` | GitHub Secrets `DEMO_USER_USERNAME` y `DEMO_USER_PASSWORD` | Login falla o quedan credenciales debiles en prod |
+| `CORS_ALLOWED_ORIGINS` | Origenes permitidos para frontend | `http://localhost:5173,...` | `local/.env` o `.env.example` | GitHub Secret `CORS_ALLOWED_ORIGINS` | Bloqueos CORS o exposicion a origenes no deseados |
+| `AWS_REGION` | Region AWS para boto3 | `us-east-1` | `local/.env` | GitHub Secret `AWS_REGION` | Cliente AWS apunta a region incorrecta |
+| `AWS_ENDPOINT_URL` | Endpoint AWS (LocalStack vs AWS real) | `http://localstack:4566` local, vacio en prod | `local/.env` | Se fuerza vacio en `deploy.yml` | Si queda LocalStack en prod, backend no llega a AWS real |
+| `DYNAMODB_TABLE_NAME` | Tabla de jobs | `prosperas-jobs` | `local/.env` | GitHub Secret `DYNAMODB_TABLE_NAME` | Errores de lectura/escritura en jobs |
+| `DYNAMODB_USER_INDEX_NAME` | GSI para listar jobs por usuario | `user_id-index` | `local/.env` | GitHub Secret `DYNAMODB_USER_INDEX_NAME` | `GET /jobs` puede fallar por indice inexistente |
+| `SQS_QUEUE_URL` | Cola principal | `.../prosperas-jobs-queue` | `local/.env` | GitHub Secret `SQS_QUEUE_URL` | Jobs no se encolan o worker no consume |
+| `SQS_PRIORITY_QUEUE_URL` | Cola de prioridad | `.../prosperas-jobs-priority-queue` | `local/.env` | GitHub Secret `SQS_PRIORITY_QUEUE_URL` | Se pierde prioridad o falla consumo prioritario |
+| `SQS_DLQ_URL` | Cola de mensajes fallidos | `.../prosperas-jobs-dlq` | `local/.env` | GitHub Secret `SQS_DLQ_URL` | Fallos no quedan aislados para analisis |
+| `SQS_PRIORITY_REPORT_KEYWORDS` | Reglas para enrutar a prioridad | `priority,urgent,critico,critica` | `.env.example` y `.env.production` | En pipeline hoy queda fijo en `deploy.yml` | Jobs urgentes pueden ir a cola normal |
+| `WORKER_MAX_ATTEMPTS` | Numero de reintentos por mensaje | `3` | `.env.example` / `.env.production` locales | GitHub Secret `WORKER_MAX_ATTEMPTS` o default pipeline | Muy bajo: falla prematura; muy alto: latencia y costo |
+| `WORKER_RETRY_BASE_SECONDS` | Base del backoff exponencial | `2` | `.env.example` / `.env.production` locales | GitHub Secret `WORKER_RETRY_BASE_SECONDS` o default pipeline | Reintentos agresivos o demasiado lentos |
+| `WORKER_RETRY_MAX_SECONDS` | Tope de backoff | `60` | `.env.example` / `.env.production` locales | GitHub Secret `WORKER_RETRY_MAX_SECONDS` o default pipeline | Puede saturar cola o retrasar recuperacion |
+| `APP_ENV` / `APP_PORT` | Entorno logico y puerto API | `local` / `8000` | `local/.env` | GitHub Secret `APP_ENV` y valor fijo `APP_PORT=8000` en pipeline | Diagnostico confuso o puerto incorrecto en despliegue |
+| `BACKEND_IMAGE` | Imagen usada por backend/worker en EC2 | URI ECR con SHA o `latest` | no aplica en local compose principal | generado por `deploy.yml` y escrito en `.env.production` | Si apunta a imagen vieja, se despliega codigo desactualizado |
+
+Parametro importante no expuesto por env (ajuste por codigo):
+- `consumer_count` (concurrencia de hilos del worker): definido en `WorkerConfig` en `backend/app/worker/consumer.py` (actual: `2`).
+- Para cambiarlo hoy: editar `WorkerConfig.consumer_count` y redeplegar imagen.
+- Riesgo: si se sube demasiado sin ajustar CPU/memoria de EC2, aumentan contencion y fallos transitorios.
+
+Donde vive la definicion canonica de variables:
+- defaults y nombres: `backend/app/core/config.py`
+- plantilla general: `.env.example`
+- referencia productiva: `infra/ec2/.env.production.example`
+- composicion final de entorno productivo: `.github/workflows/deploy.yml` (paso "Construir .env.production")
+
+## 14. Escalabilidad Real y Potencial del Proyecto
+
+Esta implementacion ya incorpora una base tecnica valida para escalar sin rehacer el sistema desde cero.
+
+### 14.1 Por que la base actual es escalable
+
+- Desacoplamiento API/worker por cola:
+	- `POST /jobs` responde rapido y delega el trabajo a SQS
+	- el tiempo de respuesta al usuario no depende del tiempo de procesamiento del reporte
+- Worker concurrente:
+	- el worker ya corre con multiples consumidores (`consumer_count=2`)
+	- permite aumentar concurrencia de forma incremental segun carga
+- Persistencia orientada a lectura por usuario:
+	- DynamoDB con GSI `user_id-index` soporta listados eficientes de jobs por usuario
+- Resiliencia incorporada:
+	- retries, backoff exponencial y DLQ reducen impacto de errores transitorios
+- Infraestructura como codigo:
+	- Terraform permite evolucionar capacidad de forma controlada (instancia, permisos, recursos)
+
+### 14.2 Limite actual (verdad operativa)
+
+El sistema no esta optimizado aun para picos masivos de trafico de gran empresa, porque:
+- la API y el worker comparten una sola instancia EC2
+- no hay autoscaling horizontal habilitado
+- no existe balanceador de carga (ALB) ni despliegue multi-instancia
+- el frontend aun no esta en produccion (solo backend + worker)
+- la observabilidad es funcional pero no incluye tablero avanzado de metricas centralizadas
+
+### 14.3 Escalado progresivo recomendado (sin romper arquitectura)
+
+Escala 1 - Ajuste rapido sin cambiar arquitectura:
+- subir recursos de EC2 (`t3.micro` -> `t3.small` o superior)
+- aumentar `consumer_count` del worker
+- afinar `worker_max_attempts`, `worker_retry_base_seconds` y `worker_retry_max_seconds`
+
+Escala 2 - Separacion de cargas:
+- separar API y worker en instancias distintas
+- mantener SQS y DynamoDB como eje de desacoplamiento
+
+Escala 3 - Alta disponibilidad:
+- agregar ALB delante de multiples instancias API
+- mover ejecucion a ASG o ECS/Fargate manteniendo contrato de mensajes y estados
+
+Escala 4 - Madurez operativa:
+- observabilidad con metricas de negocio (latencia por estado, throughput, tasa de fallos)
+- alarmas de backlog en SQS y tiempos de procesamiento
+- frontend productivo en S3 + CloudFront
+
+### 14.4 Conclusion de escalabilidad
+
+La proyeccion realista es positiva: el sistema esta listo para escalar por etapas porque el nucleo ya esta desacoplado y orientado a procesamiento asincrono. No es un sistema de hiperescala en su estado actual, pero si es una base robusta para evolucionar a una arquitectura de mayor capacidad sin rediseno total.
+
+## 15. Desafios Reales Superados y Como se Resolvio Cada Uno
+
+### Desafio 1 - Docker ausente en EC2 durante despliegue
+
+Sintoma practico:
+- el pipeline llegaba a la instancia pero fallaba antes de levantar contenedores
+
+Causa raiz:
+- la instancia no tenia runtime Docker instalado
 
 Solucion aplicada:
-- `deploy.sh` ahora verifica Docker e instala runtime con `dnf` si falta
+- `infra/ec2/deploy.sh` incorpora `ensure_docker_runtime()`
+- instala Docker con `dnf` y habilita el servicio
 
-### Problema 2 - Docker Compose plugin no existia en Amazon Linux 2023
+Verificacion:
+- el deploy continuo y pudo ejecutar `docker compose pull` y `up -d`
 
-Sintoma:
-- `docker compose` no estaba disponible en la instancia
+### Desafio 2 - Plugin `docker compose` inexistente en Amazon Linux 2023
 
-Solucion aplicada:
-- `deploy.sh` instala el plugin oficial desde GitHub Releases en `/usr/local/lib/docker/cli-plugins/docker-compose`
+Sintoma practico:
+- comandos de compose fallaban aunque Docker estaba instalado
 
-### Problema 3 - Faltaba `-f docker-compose.prod.yml`
-
-Sintoma:
-- Compose no encontraba el archivo correcto en despliegue remoto
-
-Solucion aplicada:
-- se agrego `-f docker-compose.prod.yml --env-file .env.production` a los comandos de pull, up y logs en produccion
-
-### Problema 4 - Faltaba login a ECR antes del pull
-
-Sintoma:
-- la instancia no podia descargar la imagen desde ECR
+Causa raiz:
+- AL2023 no traia el plugin esperado por defecto
 
 Solucion aplicada:
-- `deploy.sh` ahora hace `aws ecr get-login-password | docker login`
+- `deploy.sh` agrega `ensure_compose_runtime()`
+- instala plugin oficial en `/usr/local/lib/docker/cli-plugins/docker-compose`
 
-### Problema 5 - `/health` devolvia degradado por `AccessDeniedException`
+Verificacion:
+- `docker compose version` quedo operativo y el despliegue avanzo
 
-Sintoma:
-- la API estaba arriba, pero DynamoDB fallaba en el healthcheck
+### Desafio 3 - Comandos apuntaban a compose sin `-f docker-compose.prod.yml`
 
-Causa:
-- el rol EC2 no tenia `dynamodb:DescribeTable`
+Sintoma practico:
+- compose no encontraba servicios o intentaba usar otro archivo
 
-Solucion aplicada:
-- se agrego `dynamodb:DescribeTable` al IAM policy `ec2_runtime_access`
-- se aplico `terraform apply`
-
-### Problema 6 - La IP publica de EC2 cambio despues de `terraform apply`
-
-Sintoma:
-- la URL vieja dejo de responder
-
-Causa:
-- cambio en `user_data` de la instancia durante el apply, AWS reasigno IP dinamica
+Causa raiz:
+- omision del archivo compose productivo en comandos remotos
 
 Solucion aplicada:
-- se actualizaron README, SSOT y referencias de produccion a `18.212.132.182`
-- se actualizo `CORS_ALLOWED_ORIGINS`
+- estandarizar en deploy y operaciones:
+	- `docker compose -f docker-compose.prod.yml --env-file .env.production ...`
 
-### Problema 7 - El branch protection y el flujo Git debian quedar bajo control manual del owner
+Verificacion:
+- despliegues idempotentes y consistentes en EC2
+
+### Desafio 4 - Login a ECR faltante antes de descargar imagen
+
+Sintoma practico:
+- error de autenticacion al hacer `pull` de imagen privada
+
+Causa raiz:
+- no se realizaba `docker login` contra ECR en la instancia
 
 Solucion aplicada:
-- el agente crea ramas y PR
-- el merge final a `master/main` lo hace siempre el owner manualmente
+- `deploy.sh` ejecuta `aws ecr get-login-password | docker login`
 
-## 15. Errores Comunes y Como Resolverlos
+Verificacion:
+- imagen backend/worker descargada correctamente en deploy
+
+### Desafio 5 - Healthcheck degradado por permisos IAM insuficientes
+
+Sintoma practico:
+- `/health` respondia `degraded`
+- dependencia DynamoDB devolvia `AccessDeniedException`
+
+Causa raiz:
+- faltaba permiso `dynamodb:DescribeTable` en el rol de EC2
+
+Solucion aplicada:
+- actualizar IAM policy `ec2_runtime_access` en Terraform
+- ejecutar `terraform apply`
+
+Verificacion:
+- `/health` paso a `status: ok` con `dynamodb: ok` y `sqs: ok`
+
+### Desafio 6 - Cambio de IP publica tras `terraform apply`
+
+Sintoma practico:
+- URL previa dejo de responder (`timeout`)
+
+Causa raiz:
+- cambio de `user_data` produjo recambio de IP dinamica de instancia
+
+Solucion aplicada:
+- identificar IP nueva (`18.212.132.182`)
+- actualizar README/SSOT/changelog y configuracion relacionada de CORS
+
+Verificacion:
+- endpoint productivo operativo en la nueva IP
+
+### Desafio 7 - Ruido de notificaciones por polling y errores repetidos en la interfaz
+
+Sintoma practico:
+- en escenarios de conexion inestable se podian disparar mensajes repetidos y saturar la interfaz
+
+Causa raiz:
+- polling continuo cada 5 segundos sin control de duplicados en notificaciones
+
+Solucion aplicada:
+- deduplicacion de toasts en `frontend/src/App.jsx`
+- limite de pila de notificaciones (maximo 3)
+- banner de estado degradado en `JobsBoard` para informar sin spam visual
+
+Verificacion:
+- UX mas estable: menos ruido, mejor legibilidad de estados y errores
+
+### Desafio 8 - Friccion operativa en flujo Git (ramas, PR y merge)
+
+Sintoma practico:
+- ramas sin diff real, confusion de PR vacio y bloqueos por proteccion de `master`
+
+Causa raiz:
+- combinacion de ramas residuales y reglas de branch protection
+
+Solucion aplicada:
+- limpiar ramas obsoletas
+- fijar politica de trabajo: agente crea rama/commit/push/PR y el owner hace merge manual
+- documentar politica en SSOT v1.3.1
+
+Verificacion:
+- flujo Git mas predecible y controlado
+
+### Desafio 9 - Popup recurrente de seleccion de cuenta en VS Code (operativo)
+
+Sintoma practico:
+- aparicion frecuente de selector de cuentas GitHub al operar extensiones
+
+Causa raiz:
+- sesiones simultaneas de cuentas distintas sin preferencia por extension
+
+Solucion aplicada:
+- configurar cuenta preferida por extension en `Manage Extension Account Preferences`
+- separar cuenta de Copilot y cuenta de repositorio cuando aplica
+
+Verificacion:
+- menor interrupcion durante flujo de trabajo diario
+
+## 16. Errores Comunes y Como Resolverlos
 
 ### LocalStack no queda healthy
 
@@ -679,7 +922,7 @@ Revisar:
 - variables de entorno productivas
 - conectividad hacia SQS y DynamoDB
 
-## 16. Como Agregar un Nuevo Tipo de Reporte
+## 17. Como Agregar un Nuevo Tipo de Reporte
 
 Importante: hoy `report_type` NO es un enum. Es un string libre validado por longitud. Eso significa que agregar un nuevo tipo de reporte no exige cambiar un enum central, pero si conviene ajustar varios puntos para que el sistema quede coherente.
 
@@ -724,7 +967,7 @@ Pasos recomendados:
 9. Documentar el cambio.
 - actualizar `README.md`, `TECHNICAL_DOCS.md` y este `SKILL.md` si el comportamiento cambia
 
-## 17. Preguntas de Defensa y Respuestas Cortas
+## 18. Preguntas Operativas Frecuentes
 
 ### Como funciona el worker y que pasa si falla un mensaje
 
@@ -750,7 +993,7 @@ Valida el JWT del usuario, valida el payload, genera un `job_id`, guarda el job 
 
 No. El frontend esta implementado y validado en local. Produccion hoy cubre backend y worker en EC2. El despliegue del frontend queda pendiente para una fase posterior.
 
-## 18. Limitaciones Actuales y Deuda Consciente
+## 19. Limitaciones Actuales y Deuda Consciente
 
 - frontend aun no desplegado en AWS
 - `result_url` es simulado y no apunta a un archivo real
@@ -759,16 +1002,17 @@ No. El frontend esta implementado y validado en local. Produccion hoy cubre back
 - la cobertura de pruebas backend todavia no esta cerrada como artefacto de Fase 5
 - la observabilidad se apoya en logs y `/health`, no en un stack completo de metricas y dashboards dentro del repo
 
-## 19. Reglas Operativas para Agentes y Colaboradores
+## 20. Reglas Operativas para Agentes y Colaboradores
 
-- usar este archivo como contexto principal de trabajo y defensa
+- usar este archivo como contexto principal de trabajo
 - no afirmar que el frontend esta en produccion
 - no afirmar que existe generacion real de PDF/CSV si no se implementa
 - si una respuesta depende de estado operativo, usar los datos reales de esta version del proyecto
 - si se cambia arquitectura, contratos o estado del sistema, actualizar `README.md`, `TECHNICAL_DOCS.md` y este `SKILL.md`
 - para cambios Git, el agente puede crear rama y PR, pero el merge final lo hace manualmente el owner
+- higiene Git en workspace multi-repo: cuando se trabaje Prosperas, ejecutar Git solo contra `Prosperas/` y evitar `git add .` desde carpetas padre
 
-## 20. Regla de Calidad para Este Archivo
+## 21. Regla de Calidad para Este Archivo
 
 Una IA con solo este archivo debe poder responder con precision:
 - como funciona el worker
