@@ -1,8 +1,8 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.2.0
-Status: Activo (Fase 4 completada: deploy exitoso en EC2, URL publica activa, healthcheck extendido con B5)
-Last Updated: 2026-03-21
+Version: 1.3.0
+Status: Activo (Fase 4 cerrada: IP 18.212.132.182, healthcheck verde, Fase 5 en curso)
+Last Updated: 2026-03-22
 Owner: GitHub Copilot + project owner
 Project Root: D:/C U R S O S/AI Projects/Prosperas
 Primary Source: Prueba_Tecnica_Prosperas_FullStack_4.docx
@@ -243,7 +243,7 @@ Infraestructura AWS aprovisionada (2026-03-21) - terraform apply completado:
 - SQS cola prioridad: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-priority-queue
 - SQS DLQ: https://sqs.us-east-1.amazonaws.com/635896495979/prosperas-jobs-dlq
 - EC2 instance: i-085134f9bf4e85cd1 (IP publica: 18.212.132.182, DNS: ec2-18-212-132-182.compute-1.amazonaws.com)
-- IAM role: prosperas-ec2-role con AmazonSSMManagedInstanceCore + ECR read + runtime access
+- IAM role: prosperas-ec2-role con AmazonSSMManagedInstanceCore + ECR read + runtime access (incluye dynamodb:DescribeTable)
 - Seguridad: sg-0aaa01b50c94f0000
 Deploy exitoso en produccion (2026-03-21):
 - 18 GitHub Secrets cargados via API con PyNaCl
@@ -253,6 +253,13 @@ Deploy exitoso en produccion (2026-03-21):
 - URL publica activa: http://18.212.132.182:8000
 - healthcheck extendido con verificacion de DynamoDB y SQS implementado (B5)
 - README actualizado para reflejar Fase 4 completa
+
+Estado final Fase 4 (2026-03-22):
+- dynamodb:DescribeTable agregado a IAM policy ec2_runtime_access via terraform apply
+- IP publica cambio de 54.224.221.78 a 18.212.132.182 (efecto de user_data hash change en terraform apply)
+- secret CORS_ALLOWED_ORIGINS actualizado via GitHub API: http://18.212.132.182:5173,http://localhost:5173,http://127.0.0.1:5173
+- /health confirmado verde en produccion: status ok, dynamodb ok, sqs ok
+- Fase 4 cerrada definitivamente el 2026-03-22
 
 ### Fase 5 - Dia 5: Documentacion, Pruebas y Defensa
 
