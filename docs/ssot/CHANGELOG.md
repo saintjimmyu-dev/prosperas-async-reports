@@ -1,5 +1,11 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.3
+
+- Se actualizo el estado global del SSOT para reflejar que Fase 5 queda verificada en documentacion y smoke test productivo.
+- Se registro la validacion exitosa del flujo smoke en produccion: GET /health, POST /auth/login, POST /jobs y polling GET /jobs/{job_id}.
+- Se confirma disponibilidad operativa en la URL productiva y cierre tecnico de Fase 5.
+
 ## 2026-03-22 - v1.3.2
 
 - Se actualizo el estado global del SSOT para reflejar Fase 5 documental cerrada y mergeada a master.

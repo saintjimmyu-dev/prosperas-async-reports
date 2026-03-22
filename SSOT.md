@@ -1,7 +1,7 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.3.2
-Status: Activo (Fase 4 cerrada: IP 18.212.132.182, healthcheck verde, Fase 5 documental cerrada, evidencia de smoke test productivo pendiente por restriccion de entorno)
+Version: 1.3.3
+Status: Activo (Fase 4 cerrada: IP 18.212.132.182, healthcheck verde, Fase 5 documental y smoke test productivo verificados)
 Last Updated: 2026-03-22
 Owner: GitHub Copilot + project owner
 Project Root: D:/C U R S O S/AI Projects/Prosperas
@@ -266,7 +266,7 @@ Estado final Fase 4 (2026-03-22):
 
 Estado actual de Fase 5:
 - documentacion tecnica y operativa cerrada y mergeada a master
-- evidencia de smoke test en produccion pendiente de validacion externa al entorno actual
+- evidencia de smoke test en produccion verificada exitosamente por el owner desde cliente externo (Postman/PowerShell)
 
 Entregables:
 - TECHNICAL_DOCS.md
