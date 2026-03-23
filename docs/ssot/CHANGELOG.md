@@ -1,5 +1,10 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.7
+
+- Se actualizo la gobernanza para dejar explicito que el owner realiza siempre el merge en todos los casos y ramas del repositorio.
+- Se confirma que el agente puede avanzar hasta ramas y PR, pero no puede ejecutar merge a master/main.
+
 ## 2026-03-22 - v1.3.6
 
 - Se actualizo el estado global para declarar Fase 7 en ejecucion con B3 implementado y despliegue frontend preparado.

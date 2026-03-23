@@ -1,6 +1,6 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.3.6
+Version: 1.3.7
 Status: Activo (Fase 6 cerrada; Fase 7 en ejecucion con B3 implementado y despliegue frontend preparado, pendiente validacion productiva final)
 Last Updated: 2026-03-22
 Owner: GitHub Copilot + project owner
@@ -22,7 +22,7 @@ Reglas de gobernanza:
 - toda actualizacion del SSOT debe aumentar la version y crear un snapshot fechado en docs/ssot/versions
 - el objetivo de implementacion valido mas reciente es siempre este archivo
 - toda nueva generacion de codigo y toda edicion futura deben seguir este documento antes de implementar trabajo nuevo
-- el agente puede crear ramas y PR, pero no puede ejecutar merge a master/main; el merge final es siempre manual y exclusivo del owner
+- el owner realiza siempre el merge en todos los casos y ramas del repositorio; el agente puede avanzar hasta ramas y PR (incluyendo codigo, pruebas, documentacion y preparacion de release), pero nunca ejecutar merge a master/main
 - el codigo del proyecto debe incluir comentarios explicativos detallados en espanol para logica importante, flujos, efectos secundarios, integraciones y comportamiento no obvio
 - toda documentacion generada dentro del proyecto debe escribirse en espanol
 - todo script de pruebas tecnicas o validacion runtime debe ubicarse bajo local/scripts/testing para evitar archivos sueltos en la raiz de local
