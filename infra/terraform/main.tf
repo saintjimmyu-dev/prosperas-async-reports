@@ -149,7 +149,7 @@ resource "aws_iam_instance_profile" "ec2" {
 
 resource "aws_security_group" "app" {
   name        = "${var.project_name}-app-sg"
-  description = "Security group para API y frontend Prosperas"
+  description = "Security group para API Prosperas"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
