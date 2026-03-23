@@ -1,5 +1,12 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.8
+
+- Se actualizo el estado global para reflejar merge completado de Fase 7 y diagnostico productivo de frontend no accesible en puerto 80.
+- Se documento causa raiz: Security Group de EC2 exponia solo puerto 8000 (API) y no puerto 80 (frontend nginx).
+- Se registro ajuste IaC en Terraform para abrir puerto 80 mediante variable `allowed_frontend_cidr` e ingress dedicado en `aws_security_group.app`.
+- Se deja explicito que para activar este fix en AWS se requiere ejecutar `terraform plan` y `terraform apply`.
+
 ## 2026-03-22 - v1.3.7
 
 - Se actualizo la gobernanza para dejar explicito que el owner realiza siempre el merge en todos los casos y ramas del repositorio.

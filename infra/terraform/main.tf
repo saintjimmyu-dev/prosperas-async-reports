@@ -149,8 +149,16 @@ resource "aws_iam_instance_profile" "ec2" {
 
 resource "aws_security_group" "app" {
   name        = "${var.project_name}-app-sg"
-  description = "Security group para API Prosperas"
+  description = "Security group para API y frontend Prosperas"
   vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "Frontend Nginx"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_frontend_cidr]
+  }
 
   ingress {
     description = "API FastAPI"

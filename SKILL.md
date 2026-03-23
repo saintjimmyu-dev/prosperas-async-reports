@@ -36,7 +36,7 @@ Que hace el sistema hoy:
 Estado real actual:
 - backend desplegado en AWS EC2 y accesible en `http://18.212.132.182:8000`
 - healthcheck productivo verde en `http://18.212.132.182:8000/health`
-- frontend implementado y validado en local, pero aun no desplegado en produccion
+- frontend desplegado por pipeline, con incidencia operativa detectada en produccion: el Security Group solo exponia 8000 y no 80; requiere ajuste Terraform + apply
 - la generacion del resultado del reporte sigue siendo simulada: `result_url` apunta a `s3://prosperas-reports/<job_id>.<format>`
 
 ## 3. Opciones de Arquitectura Evaluadas al Inicio y Decision Final
@@ -227,6 +227,31 @@ Respuesta real verificada del healthcheck:
 }
 ```
 
+## 7.1 Flujo GitHub Real y Regla de Merge
+
+Flujo operativo oficial:
+- el trabajo tecnico se realiza en rama de feature
+- el agente puede implementar codigo, pruebas, documentacion, commits y push
+- el agente puede dejar abierto y documentado el PR
+- el owner revisa, aprueba y ejecuta siempre el merge en todos los casos
+
+Motivo de gobierno para merge owner-only:
+- mantiene control humano final sobre calidad y riesgo
+- evita merges automaticos no deseados en ramas protegidas
+- asegura trazabilidad de aprobacion final en GitHub
+
+Flujo CI/CD real en GitHub Actions:
+- trigger principal: push a `master` en rutas `backend/**`, `frontend/**`, `infra/**`, `.github/workflows/deploy.yml`, `.env.example`
+- build y push de imagen backend/worker a ECR
+- build y push de imagen frontend a ECR
+- construccion de `.env.production` en workflow
+- despliegue remoto en EC2 via SSM ejecutando `infra/ec2/deploy.sh`
+
+Por que el agente llega hasta PR y no merge:
+- restriccion explicita de gobernanza definida en SSOT
+- el agente soporta el ciclo tecnico completo hasta PR listo
+- la decision de integracion final queda reservada al owner
+
 ## 8. Mapa Completo del Repositorio
 
 ### Raiz del proyecto
@@ -289,7 +314,7 @@ Ruta base: `frontend/src`
 
 - `infra/terraform/main.tf`: EC2, ECR, DynamoDB, SQS, IAM y permisos
 - `infra/terraform/outputs.tf`: outputs de infraestructura
-- `infra/ec2/docker-compose.prod.yml`: backend + worker en produccion
+- `infra/ec2/docker-compose.prod.yml`: frontend + backend + worker en produccion
 - `infra/ec2/deploy.sh`: instala runtime, login ECR, pull, up -d y healthcheck
 - `.github/workflows/deploy.yml`: build a ECR y deploy remoto via SSM
 

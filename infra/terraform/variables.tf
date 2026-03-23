@@ -46,6 +46,12 @@ variable "allowed_api_cidr" {
   default     = "0.0.0.0/0"
 }
 
+variable "allowed_frontend_cidr" {
+  description = "CIDR permitido para exponer frontend en puerto 80"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
 variable "ecr_repository_name" {
   description = "Nombre del repositorio ECR para imagen backend/worker"
   type        = string
