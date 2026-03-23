@@ -1,6 +1,6 @@
 # SKILL - Manual Operativo Completo del Proyecto Prosperas
 
-Estado: Activo para cierre de Fase 7 y trabajo de agentes con contexto unico.
+Estado: Activo con Fase 7 cerrada y sistema operativo en produccion.
 
 ## 1. Proposito de Este Archivo
 
@@ -36,7 +36,7 @@ Que hace el sistema hoy:
 Estado real actual:
 - backend desplegado en AWS EC2 y accesible en `http://18.212.132.182:8000`
 - healthcheck productivo verde en `http://18.212.132.182:8000/health`
-- frontend implementado y validado en local, pero aun no desplegado en produccion
+- frontend operativo en produccion en `http://18.212.132.182` tras aplicar Terraform para exponer puerto 80 en Security Group
 - la generacion del resultado del reporte sigue siendo simulada: `result_url` apunta a `s3://prosperas-reports/<job_id>.<format>`
 
 ## 3. Opciones de Arquitectura Evaluadas al Inicio y Decision Final
@@ -131,19 +131,17 @@ Implementado y validado:
 - Fase 4: despliegue productivo backend + worker en EC2 con CI/CD
 - Fase 5: documentacion final y smoke test productivo verificado
 - Fase 6: hardening tecnico con B2 (circuit breaker) y B6 (17 pruebas backend, 75 por ciento de cobertura)
-
-En curso:
-- Fase 7: B3 implementado en codigo y despliegue frontend preparado en pipeline/compose, pendiente validacion productiva final
+- Fase 7: realtime B3 en produccion, frontend operativo en `:80` y validacion productiva final completada
 
 Pendiente:
 - cierre de defensa tecnica y paquete final de entrega con evidencia runtime de interfaz publica
 
 Estado de bonus:
 - Completados: B1 (prioridad), B2 (circuit breaker), B3 (tiempo real con fallback), B4 (backoff), B5 (observabilidad), B6 (cobertura >= 70%)
-- Pendientes: ninguno a nivel de implementacion tecnica; falta validacion final en entorno productivo
+- Pendientes: ninguno a nivel de implementacion tecnica ni validacion productiva
 
 Importante:
-- frontend aun no esta validado en URL publica con evidencia final; el despliegue ya quedo preparado en Fase 7
+- frontend validado en URL publica y operativo en produccion
 - `POST /jobs` y el worker si estan operativos en produccion
 - `result_url` es simulado; no hay generacion real de PDF/CSV ni descarga real desde S3
 - observabilidad real actual = logs estructurados basicos + endpoint `/health`
@@ -227,6 +225,31 @@ Respuesta real verificada del healthcheck:
 }
 ```
 
+## 7.1 Flujo GitHub Real y Regla de Merge
+
+Flujo operativo oficial:
+- el trabajo tecnico se realiza en rama de feature
+- el agente puede implementar codigo, pruebas, documentacion, commits y push
+- el agente puede dejar abierto y documentado el PR
+- el owner revisa, aprueba y ejecuta siempre el merge en todos los casos
+
+Motivo de gobierno para merge owner-only:
+- mantiene control humano final sobre calidad y riesgo
+- evita merges automaticos no deseados en ramas protegidas
+- asegura trazabilidad de aprobacion final en GitHub
+
+Flujo CI/CD real en GitHub Actions:
+- trigger principal: push a `master` en rutas `backend/**`, `frontend/**`, `infra/**`, `.github/workflows/deploy.yml`, `.env.example`
+- build y push de imagen backend/worker a ECR
+- build y push de imagen frontend a ECR
+- construccion de `.env.production` en workflow
+- despliegue remoto en EC2 via SSM ejecutando `infra/ec2/deploy.sh`
+
+Por que el agente llega hasta PR y no merge:
+- restriccion explicita de gobernanza definida en SSOT
+- el agente soporta el ciclo tecnico completo hasta PR listo
+- la decision de integracion final queda reservada al owner
+
 ## 8. Mapa Completo del Repositorio
 
 ### Raiz del proyecto
@@ -289,7 +312,7 @@ Ruta base: `frontend/src`
 
 - `infra/terraform/main.tf`: EC2, ECR, DynamoDB, SQS, IAM y permisos
 - `infra/terraform/outputs.tf`: outputs de infraestructura
-- `infra/ec2/docker-compose.prod.yml`: backend + worker en produccion
+- `infra/ec2/docker-compose.prod.yml`: frontend + backend + worker en produccion
 - `infra/ec2/deploy.sh`: instala runtime, login ECR, pull, up -d y healthcheck
 - `.github/workflows/deploy.yml`: build a ECR y deploy remoto via SSM
 
@@ -1002,11 +1025,10 @@ Valida el JWT del usuario, valida el payload, genera un `job_id`, guarda el job 
 
 ### El frontend esta desplegado en produccion
 
-No. El frontend esta implementado y validado en local. Produccion hoy cubre backend y worker en EC2. El despliegue del frontend queda pendiente para una fase posterior.
+Si. El frontend esta desplegado y operativo en `http://18.212.132.182` tras habilitar puerto 80 en Security Group mediante Terraform apply.
 
 ## 19. Limitaciones Actuales y Deuda Consciente
 
-- frontend aun no desplegado en AWS
 - `result_url` es simulado y no apunta a un archivo real
 - no existe todavia endpoint de descarga del reporte
 - autenticacion es demo, no hay gestion real de usuarios
