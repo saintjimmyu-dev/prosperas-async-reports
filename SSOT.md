@@ -1,7 +1,7 @@
 # SSOT - Reto de Reportes Asincronos Prosperas
 
-Version: 1.3.4
-Status: Activo (Fase 5 cerrada, Fase 6 en ejecucion para pendientes B2/B6, Fase 7 planificada para B3 y cierre final)
+Version: 1.3.7
+Status: Activo (Fase 6 cerrada; Fase 7 en ejecucion con B3 implementado y despliegue frontend preparado, pendiente validacion productiva final)
 Last Updated: 2026-03-22
 Owner: GitHub Copilot + project owner
 Project Root: D:/C U R S O S/AI Projects/Prosperas
@@ -22,7 +22,7 @@ Reglas de gobernanza:
 - toda actualizacion del SSOT debe aumentar la version y crear un snapshot fechado en docs/ssot/versions
 - el objetivo de implementacion valido mas reciente es siempre este archivo
 - toda nueva generacion de codigo y toda edicion futura deben seguir este documento antes de implementar trabajo nuevo
-- el agente puede crear ramas y PR, pero no puede ejecutar merge a master/main; el merge final es siempre manual y exclusivo del owner
+- el owner realiza siempre el merge en todos los casos y ramas del repositorio; el agente puede avanzar hasta ramas y PR (incluyendo codigo, pruebas, documentacion y preparacion de release), pero nunca ejecutar merge a master/main
 - el codigo del proyecto debe incluir comentarios explicativos detallados en espanol para logica importante, flujos, efectos secundarios, integraciones y comportamiento no obvio
 - toda documentacion generada dentro del proyecto debe escribirse en espanol
 - todo script de pruebas tecnicas o validacion runtime debe ubicarse bajo local/scripts/testing para evitar archivos sueltos en la raiz de local
@@ -286,8 +286,9 @@ Criterios de exito:
 ### Fase 6 - Buffer A
 
 Estado actual de Fase 6:
-- iniciada para hardening y cierre de pendientes tecnicos de bonus
-- foco operativo: B2 circuit breaker y B6 cobertura backend
+- cerrada con hardening tecnico aplicado al backend
+- B2 verificado con circuit breaker por report_type en el worker
+- B6 verificado con 17 pruebas backend aprobadas y 75 por ciento de cobertura sobre `backend/app`
 
 Usar para:
 - arreglos de despliegue
@@ -298,8 +299,9 @@ Usar para:
 ### Fase 7 - Buffer B
 
 Estado actual de Fase 7:
-- planificada para cierre final de bonus y paquete de entrega
-- foco de cierre: B3 tiempo real en frontend y evidencia final de defensa
+- en ejecucion con B3 implementado (WebSocket de snapshots de jobs + fallback a polling)
+- despliegue frontend preparado en CI/CD y compose productivo (imagen frontend + servicio nginx)
+- pendiente de cierre: validacion productiva final con evidencia runtime de interfaz publica
 
 Usar para:
 - ensayo de entrevista

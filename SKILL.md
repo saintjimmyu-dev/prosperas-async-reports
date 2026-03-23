@@ -1,6 +1,6 @@
 # SKILL - Manual Operativo Completo del Proyecto Prosperas
 
-Estado: Activo para Fase 5 y trabajo de agentes con contexto unico.
+Estado: Activo para cierre de Fase 7 y trabajo de agentes con contexto unico.
 
 ## 1. Proposito de Este Archivo
 
@@ -29,8 +29,9 @@ Que hace el sistema hoy:
 - persiste el job en DynamoDB
 - publica el trabajo en Amazon SQS
 - un worker concurrente consume mensajes y procesa en segundo plano
+- el worker aplica circuit breaker por `report_type` cuando detecta fallos consecutivos
 - el worker actualiza el estado del job a `PROCESSING`, `COMPLETED` o `FAILED`
-- el frontend React consulta el backend cada 5 segundos y actualiza los badges visuales
+- el frontend React consume snapshots en tiempo real por WebSocket y mantiene fallback a polling cada 5 segundos
 
 Estado real actual:
 - backend desplegado en AWS EC2 y accesible en `http://18.212.132.182:8000`
@@ -129,19 +130,20 @@ Implementado y validado:
 - Fase 3: frontend React dockerizado con polling y UX responsive
 - Fase 4: despliegue productivo backend + worker en EC2 con CI/CD
 - Fase 5: documentacion final y smoke test productivo verificado
+- Fase 6: hardening tecnico con B2 (circuit breaker) y B6 (17 pruebas backend, 75 por ciento de cobertura)
 
 En curso:
-- Fase 6: hardening tecnico y cierre de pendientes B2/B6
+- Fase 7: B3 implementado en codigo y despliegue frontend preparado en pipeline/compose, pendiente validacion productiva final
 
 Pendiente:
-- Fase 7: cierre final de bonus B3, defensa tecnica y paquete de entrega
+- cierre de defensa tecnica y paquete final de entrega con evidencia runtime de interfaz publica
 
 Estado de bonus:
-- Completados: B1 (prioridad), B4 (backoff), B5 (observabilidad)
-- Pendientes: B2 (circuit breaker), B3 (tiempo real), B6 (cobertura >= 70%)
+- Completados: B1 (prioridad), B2 (circuit breaker), B3 (tiempo real con fallback), B4 (backoff), B5 (observabilidad), B6 (cobertura >= 70%)
+- Pendientes: ninguno a nivel de implementacion tecnica; falta validacion final en entorno productivo
 
 Importante:
-- frontend NO esta desplegado en produccion aun; su despliegue se ejecuta en Fase 6/7 como parte del cierre final
+- frontend aun no esta validado en URL publica con evidencia final; el despliegue ya quedo preparado en Fase 7
 - `POST /jobs` y el worker si estan operativos en produccion
 - `result_url` es simulado; no hay generacion real de PDF/CSV ni descarga real desde S3
 - observabilidad real actual = logs estructurados basicos + endpoint `/health`
@@ -253,6 +255,7 @@ Ruta base: `backend/app`
 - `schemas/job.py`: contratos Pydantic para jobs
 - `schemas/auth.py`: contratos de login y token
 - `services/job_service.py`: orquesta DynamoDB + SQS para crear y consultar jobs
+- `services/circuit_breaker.py`: controla apertura, enfriamiento y recuperacion del circuit breaker por tipo de reporte
 - `services/dynamodb_service.py`: acceso a tabla y paginacion por cursor
 - `services/sqs_service.py`: publicacion, lectura, borrado y cambio de visibilidad en SQS
 - `services/user_service.py`: valida credenciales demo

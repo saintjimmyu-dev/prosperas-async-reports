@@ -1,5 +1,25 @@
 # Historial del SSOT
 
+## 2026-03-22 - v1.3.7
+
+- Se actualizo la gobernanza para dejar explicito que el owner realiza siempre el merge en todos los casos y ramas del repositorio.
+- Se confirma que el agente puede avanzar hasta ramas y PR, pero no puede ejecutar merge a master/main.
+
+## 2026-03-22 - v1.3.6
+
+- Se actualizo el estado global para declarar Fase 7 en ejecucion con B3 implementado y despliegue frontend preparado.
+- Se agrego endpoint WebSocket `/ws/jobs` en backend para snapshots en tiempo real por usuario autenticado.
+- Se actualizo frontend para consumir stream realtime y mantener fallback a polling cuando el socket no esta disponible.
+- Se amplio pipeline deploy para construir/publicar imagen frontend y ejecutar compose productivo con servicio de interfaz.
+- Pendiente de cierre: validacion productiva final de interfaz publica y evidencia runtime.
+
+## 2026-03-22 - v1.3.5
+
+- Se actualizo el estado global para declarar Fase 6 cerrada con B2 y B6 verificados.
+- Se registro la implementacion del circuit breaker por tipo de reporte dentro del worker.
+- Se documento la validacion de B6 con 17 pruebas backend aprobadas y 75 por ciento de cobertura sobre `backend/app`.
+- Se dejo Fase 7 como siguiente objetivo para B3, despliegue frontend productivo y cierre final de entrega.
+
 ## 2026-03-22 - v1.3.4
 
 - Se actualizo el estado global para declarar Fase 5 cerrada y la ejecucion de Fase 6 para cierre de pendientes B2 y B6.
