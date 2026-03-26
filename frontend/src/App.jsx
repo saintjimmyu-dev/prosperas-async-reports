@@ -68,12 +68,23 @@ export default function App() {
     });
   }
 
+  function handleSessionExpired() {
+    setToken("");
+    setUsername("demo");
+  }
+
   return (
     <div className="app-shell">
       <div className="background-orb background-orb--amber" />
       <div className="background-orb background-orb--teal" />
       {token ? (
-        <DashboardPage onLogout={handleLogout} pushToast={pushToast} token={token} username={username} />
+        <DashboardPage
+          onLogout={handleLogout}
+          onSessionExpired={handleSessionExpired}
+          pushToast={pushToast}
+          token={token}
+          username={username}
+        />
       ) : (
         <LoginCard onAuthenticated={handleAuthenticated} pushToast={pushToast} />
       )}
