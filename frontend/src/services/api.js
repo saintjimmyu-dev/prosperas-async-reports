@@ -116,8 +116,8 @@ export function connectJobsRealtime(token, { onSnapshot, onError, onOpen, onClos
     onError?.(new ApiError("No fue posible abrir el stream en tiempo real."));
   });
 
-  socket.addEventListener("close", () => {
-    onClose?.();
+  socket.addEventListener("close", (event) => {
+    onClose?.(event);
   });
 
   return () => {

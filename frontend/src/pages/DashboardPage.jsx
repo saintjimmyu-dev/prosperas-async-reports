@@ -33,7 +33,7 @@ function summarizeJobs(jobs) {
   );
 }
 
-export function DashboardPage({ onLogout, pushToast, token, username }) {
+export function DashboardPage({ onLogout, onSessionExpired, pushToast, token, username }) {
   const [jobs, setJobs] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
@@ -45,6 +45,23 @@ export function DashboardPage({ onLogout, pushToast, token, username }) {
   const [lastRefreshError, setLastRefreshError] = useState("");
   const [isRealtimeActive, setIsRealtimeActive] = useState(false);
   const realtimeConnectedRef = useRef(false);
+  const sessionExpiredHandledRef = useRef(false);
+
+  const handleSessionExpired = useEffectEvent((message) => {
+    if (sessionExpiredHandledRef.current) {
+      return;
+    }
+
+    sessionExpiredHandledRef.current = true;
+    setConnectionState("degraded");
+    setLastRefreshError(message ?? "Token invalido o expirado.");
+    pushToast({
+      kind: "warning",
+      title: "Sesion expirada",
+      message: "Tu sesion expiro. Vuelve a iniciar sesion para continuar.",
+    });
+    onSessionExpired();
+  });
 
   const refreshJobs = useEffectEvent(async ({ showErrorToast = false, silent = false } = {}) => {
     if (silent) {
@@ -63,6 +80,11 @@ export function DashboardPage({ onLogout, pushToast, token, username }) {
       setConnectionState("online");
       setLastRefreshError("");
     } catch (error) {
+      if (error?.status === 401 || error?.code === "UNAUTHORIZED") {
+        handleSessionExpired(error.message);
+        return;
+      }
+
       if (!realtimeConnectedRef.current) {
         setConnectionState("degraded");
       }
@@ -93,13 +115,20 @@ export function DashboardPage({ onLogout, pushToast, token, username }) {
         setConnectionState("online");
         setLastRefreshError("");
       },
-      onClose: () => {
+      onClose: (event) => {
+        if (event?.code === 4401) {
+          handleSessionExpired("Token invalido o expirado.");
+          return;
+        }
+
         realtimeConnectedRef.current = false;
         setIsRealtimeActive(false);
         setConnectionState("degraded");
       },
       onError: (error) => {
-        setLastRefreshError(error.message);
+        if (!sessionExpiredHandledRef.current) {
+          setLastRefreshError(error.message);
+        }
       },
       onSnapshot: (items) => {
         startTransition(() => {
